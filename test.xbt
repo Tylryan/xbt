@@ -1,3 +1,4 @@
+/* import "path/to/file.xbt */
 /* 
  * RULE: This is a concept, not an actual file or anything.
  * - build_files: Files to watch for changes.
@@ -14,19 +15,18 @@ rule All {
  	 */
 
     /* TODO(tyler): Add support for multiple files. */
-    
-    build_files  = "lexer/XbtLexer.g4"
-    output_files = "lexer/XbtLexer.tokens"
+    build_files  = "examples/c_project/main.c" "hello world";
+    output_files = "examples/c_project/a.out" ;
  
     /* TODO(tyler): Eventually add support for '$^' and '$@' */
-	/* $ echo antlr4 lexer/XbtLexer.g4 -Dlanguage=Python3 */
-	$ antlr4 lexer/XbtLexer.g4 -Dlanguage=Python3
+	$ gcc -o examples/c_project/a.out examples/c_project/main.c examples/c_project/helper.o
+    $ ./examples/c_project/a.out
 
 }
 
 rule Fake {
-    build_files  = "lexer/XbtLexer.g4"
-    output_files = "lexer/XbtLexer.tokens"
+    build_files  = "examples/c_project/helper.c" "hello world";
+    output_files = "examples/c_project/helper.o" ;
 
-    $ echo "Running fake rule"
+    $ gcc -o examples/c_project/helper.o -c examples/c_project/helper.c
 }
