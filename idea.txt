@@ -1,0 +1,28 @@
+# Interesting Idea for a better build system lol
+# rule All {
+# 	/* Tests Antlr First. If no dependencies are
+# 	 * declared, then the program will test each
+# 	 * rule in reverse order. In this example, Antlr
+# 	 * would be tested first anyways and only executed
+# 	 * if needed.
+# 	 */
+# 	dependencies = (Antlr);
+# 
+# 	{
+# 		python interpreter.py
+# 	}
+#}
+# 
+# rule Antlr {
+# 	/* If build_files are newer than dist_files (or
+# 	 * the build files don't exist), then run whatever
+# 	 * commands are in the brackets.
+# 	 */
+# 
+# 	build_files  = ("file_one", "dir_one");
+# 	dist_files   = ("file_two");
+# 
+# 	{
+# 		make -C antlr_lexer/;
+# 	}
+#}

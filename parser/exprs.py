@@ -1,0 +1,74 @@
+from __future__ import annotations
+
+from antlr4 import Token
+from dataclasses import dataclass
+
+
+class Expr:
+    def as_dict(self) -> dict[str, object]:
+        pass
+
+@dataclass
+class Shell(Expr):
+    commands: Token
+
+    def as_dict(self) -> dict[str, object]:
+        return {"shell": self.commands.text}
+
+@dataclass
+class Comment(Expr):
+    token: Token
+
+    def as_dict(self) -> dict[str, object]:
+        return { "comment": self.token.text }
+    
+@dataclass
+class Rule(Expr):
+    name: Variable
+    exprs: list[Expr]
+    environment: dict[str, object]
+
+    def __init__(self, name: Variable, exprs: list[Expr]):
+        self.name = name
+        self.exprs = exprs
+        self.environment = {}
+
+    def as_dict(self) -> dict[str, object]:
+        exprs: list[Expr] = []
+        for expr in self.exprs:
+            if expr:
+                exprs.append(expr)
+        return { 
+            "rule": {
+                "name": self.name.token.text,
+                "exprs": [e.as_dict() for e in exprs]
+            }
+        }
+
+@dataclass
+class Variable(Expr):
+    token: Token
+
+    def as_dict(self) -> dict[str, object]:
+        return { "variable": self.token.text }
+
+@dataclass
+class Assign(Expr):
+    variable: Variable
+    value: Expr
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "assign": {
+                "variable": self.variable.token.text,
+                "value"   : self.value.as_dict() if self.value else None
+            }
+        }
+
+
+@dataclass
+class Literal(Expr):
+    token: Token
+
+    def as_dict(self) -> dict[str, object]:
+        return { "literal": {self.token.text } }
