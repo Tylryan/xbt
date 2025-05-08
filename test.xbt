@@ -25,6 +25,8 @@ rule All {
 }
 
 rule Fake {
+    /* TODO: If no build_files or output_files, then run
+     * rule like a .PHONY directive. */
     build_files  = "examples/c_project/helper.c" "hello world";
     output_files = "examples/c_project/helper.o" ;
 
