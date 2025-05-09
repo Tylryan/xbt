@@ -73,19 +73,28 @@ def eval_rule(rule: Rule) ->  None:
             # there are no redefinitions?
             rule.environment[e.variable.token.text] = eval_list(e.values, global_env)
 
-    if "build_files" not in rule.environment.keys():
-        error(l, c, f"'build_files' was not assigned in rule '{rule_name}'.")
-    if "output_files" not in rule.environment.keys():
-        error(l, c, f"'output_files' was not assigned in rule '{rule_name}'.")
-
     def trim_quotes(strings: list[str]) -> list[str]:
         return [s[1:-1] for s in strings]
 
-    build_files : list[str] = trim_quotes(rule.environment["build_files"])
-    output_files: list[str] = trim_quotes(rule.environment["output_files"])
+    build_files: list[str] = rule.environment.get("build_files", [])
+    output_files: list[str] = rule.environment.get("output_files", [])
+
+    build_files = trim_quotes(build_files)
+    output_files = trim_quotes(output_files)
+
+    # If the user did not assign a value to one of these variables
+    # then the rule should not do a time comparison and should
+    # simply run the shell scripts.
+    if build_files == [] or output_files == []:
+        eval_list(rule.exprs, rule.environment)
+        rules_ran+=1
+        return (True, rule_name)
 
     import os
     from os.path import getctime
+    # At this point, the user has declared the files they wish to
+    # watch. If those files don't exist, we should let them know
+    # about it.
     def files_exist_check(files: list[str]) -> None:
         for file in files:
             if os.path.isfile(file) is False:
@@ -115,20 +124,8 @@ def eval_rule(rule: Rule) ->  None:
     if newest_build_time < newest_output_time:
         return (False, rule_name)
 
-    # import os
-    # if os.path.isfile(build_file) is False:
-    #     error(l, c, f"file path '{build_file}' in rule '{rule_name}' does not exist.")
-
-    # output_exists = os.path.isfile(output_file)
-
-    # build_time  = os.path.getctime(build_file)
-    # output_time = os.path.getctime(output_file) if output_exists else 0
-    # if build_time < output_time:
-    #     return (False, rule_name)
-
-    [ evaluate(expr, rule.environment) for expr in rule.exprs ]
+    eval_list(rule.exprs, rule.environment)
     rules_ran+=1
-
     return (True, rule_name)
 
 def eval_shell(shell: Shell) ->  None:
