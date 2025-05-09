@@ -46,6 +46,12 @@ def evaluate(expr: Expr, local_env: dict[str, object]) -> object:
     if isinstance(expr, Variable): return eval_variable(expr, local_env)
     else: error(f"[interpreter-error] unimplemented expression: {expr}")
 
+def eval_list(exprs: list[Expr], local_env: dict[str, object]) -> list[object]:
+    values: list[object] = []
+    for expr in exprs:
+        values.append(evaluate(expr, local_env))
+    return values
+
 
 def eval_rule(rule: Rule) ->  None:
     # Nested rules are not allowed as of, so 
@@ -65,27 +71,60 @@ def eval_rule(rule: Rule) ->  None:
         if isinstance(e, Assign):
             # TODO(tyler): Should I check to make sure
             # there are no redefinitions?
-            rule.environment[e.variable.token.text] = evaluate(e.value, global_env)
+            rule.environment[e.variable.token.text] = eval_list(e.values, global_env)
 
     if "build_files" not in rule.environment.keys():
         error(l, c, f"'build_files' was not assigned in rule '{rule_name}'.")
     if "output_files" not in rule.environment.keys():
         error(l, c, f"'output_files' was not assigned in rule '{rule_name}'.")
 
-    build_file : str = rule.environment["build_files"][1:-1]
-    output_file: str = rule.environment["output_files"][1:-1]
+    def trim_quotes(strings: list[str]) -> list[str]:
+        return [s[1:-1] for s in strings]
+
+    build_files : list[str] = trim_quotes(rule.environment["build_files"])
+    output_files: list[str] = trim_quotes(rule.environment["output_files"])
 
     import os
-    if os.path.isfile(build_file) is False:
-        error(l, c, f"file path '{build_file}' in rule '{rule_name}' does not exist.")
+    from os.path import getctime
+    def files_exist_check(files: list[str]) -> None:
+        for file in files:
+            if os.path.isfile(file) is False:
+                error(l, c, f"file path '{file}' in rule '{rule_name}' does not exist.")
 
-    output_exists = os.path.isfile(output_file)
+    def get_newest_file_timestamp(files: list[str]) -> int:
+        newest_timestamp: int = getctime(files[0])
 
-    # NOTE: The key to the whole show
-    build_time  = os.path.getctime(build_file)
-    output_time = os.path.getctime(output_file) if output_exists else 0
-    if build_time < output_time:
+        for file in files[1:]:
+            newest_timestamp = max(newest_timestamp, getctime(file))
+        return newest_timestamp
+
+    # Make sure the files actually exist.
+    files_exist_check(build_files)
+    files_exist_check(output_files)
+
+
+    newest_build_time: int = get_newest_file_timestamp(build_files)
+    newest_output_time: int = get_newest_file_timestamp(output_files)
+
+    # If the user is watching a set of build files and any of them
+    # is newer than the set of output files they are watching,
+    # then we should trigger this rule.
+    # This checks the opposite case. If the latest modified build
+    # file is older than the latest modified output file, then do
+    # not trigger this rule.
+    if newest_build_time < newest_output_time:
         return (False, rule_name)
+
+    # import os
+    # if os.path.isfile(build_file) is False:
+    #     error(l, c, f"file path '{build_file}' in rule '{rule_name}' does not exist.")
+
+    # output_exists = os.path.isfile(output_file)
+
+    # build_time  = os.path.getctime(build_file)
+    # output_time = os.path.getctime(output_file) if output_exists else 0
+    # if build_time < output_time:
+    #     return (False, rule_name)
 
     [ evaluate(expr, rule.environment) for expr in rule.exprs ]
     rules_ran+=1
@@ -118,8 +157,9 @@ def eval_variable(variable: Variable, local_env: dict[str, object]) -> None:
           f"undefined variable: {variable_name}")
 
 def eval_assign(assign: Assign, local_env: dict[str, object]) -> None:
-    value: object = evaluate(assign.value, local_env)
-    local_env[assign.variable.token.text] = value
+    values: list[object] = eval_list(assign.values, local_env)
+    # value: object = evaluate(assign.values, local_env)
+    local_env[assign.variable.token.text] = values
     return None
 
 def eval_literal(literal: Literal) -> None:

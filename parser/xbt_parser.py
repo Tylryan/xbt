@@ -83,11 +83,14 @@ def parse_assignment() -> Expr:
               "something that clearly isn't a storage type.")
 
     var: Variable = expr
-    value: Expr = parse_expression()
+    values: list[Expr] = []
+    
+    while check(parser.lexer.STRING):
+        values.append(parse_expression())
 
     consume(parser.lexer.SEMI,
             "Missing ';' in variable assignment.")
-    return Assign(var, value)
+    return Assign(var, values)
 
 def parse_primary() -> Expr:
 

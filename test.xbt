@@ -14,7 +14,6 @@ rule All {
  	 * if needed.
  	 */
 
-    /* TODO(tyler): Add support for multiple files. */
     build_files  = "examples/c_project/main.c";
     output_files = "examples/c_project/a.out" ;
  
@@ -27,7 +26,7 @@ rule All {
 rule Fake {
     /* TODO: If no build_files or output_files, then run
      * rule like a .PHONY directive. */
-    build_files  = "examples/c_project/helper.c";
+    build_files  = "examples/c_project/helper.c" "examples/c_project/helper.h";
     output_files = "examples/c_project/helper.o" ;
 
     $ gcc -o examples/c_project/helper.o -c examples/c_project/helper.c
