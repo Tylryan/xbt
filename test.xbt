@@ -14,7 +14,19 @@ rule All {
  	 * if needed.
  	 */
 
-    $build_files  = "examples/c_project/main.c" "examples/c_project/helper.o";
+    /* TODO(tyler): Allow for variable references/
+     * expansion on the right hand side of assignment
+     * expressions
+     *
+     * TODO(tyler): Allow string concatonation or
+     * interpolation.
+     * $project_dir = "examples/c_project"
+     * $build_files  = $project_dir + "/main.c"
+     *                 $project_dir + "/helper.o";
+     */
+
+    $build_files  = "examples/c_project/main.c" 
+                    "examples/c_project/helper.o";
 
     $output_files = "examples/c_project/a.out" ;
  
@@ -23,11 +35,11 @@ rule All {
 }
 
 rule Fake {
-    /* TODO: If no build_files or output_files, then run
+    /* If no build_files or output_files, then run
      * rule like a .PHONY directive. */
     $watch_files  = "examples/c_project/helper.h";
     $build_files  = "examples/c_project/helper.c";
     $output_files = "examples/c_project/helper.o" ;
 
-    $ gcc -o examples/c_project/helper.o -c $build_files
+    $ gcc -o $output_files -c $build_files
 }
