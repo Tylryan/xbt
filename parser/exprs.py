@@ -40,7 +40,7 @@ class Rule(Expr):
                 exprs.append(expr)
         return { 
             "rule": {
-                "name": self.name.token.text,
+                "name": self.name.token.text if self.name else None,
                 "exprs": [e.as_dict() for e in exprs]
             }
         }
@@ -55,13 +55,17 @@ class Variable(Expr):
 @dataclass
 class Assign(Expr):
     variable: Variable
-    value: Expr
+    values: list[Expr]
 
     def as_dict(self) -> dict[str, object]:
+        values: list[object] = []
+        for val in self.values:
+            values.append(val.as_dict())
+
         return { 
             "assign": {
                 "variable": self.variable.token.text,
-                "value"   : self.value.as_dict() if self.value else None
+                "value"   : values
             }
         }
 

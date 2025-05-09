@@ -16,7 +16,6 @@ class Parser:
         self.peek = None
         self.prev = None
 
-
 global parser
 def parse(lexer: XbtLexer) -> list:
     global parser
@@ -34,6 +33,9 @@ def parse(lexer: XbtLexer) -> list:
         if expr:
             exprs.append(expr)
 
+    # from pprint import pprint
+    # [ pprint(x.as_dict(), sort_dicts=False) for x in exprs]
+    # exit(1)
     return exprs
 
 
@@ -73,7 +75,6 @@ def parse_assignment() -> Expr:
     c: int = column()
     expr: Expr = parse_primary()
 
-
     if matches(parser.lexer.EQUAL) is False:
         return expr
 
@@ -83,20 +84,32 @@ def parse_assignment() -> Expr:
               "something that clearly isn't a storage type.")
 
     var: Variable = expr
-    value: Expr = parse_expression()
-    return Assign(var, value)
+    values: list[Expr] = []
+    
+    while check(parser.lexer.STRING):
+        values.append(parse_expression())
+
+    consume(parser.lexer.SEMI,
+            "Missing ';' in variable assignment.")
+    return Assign(var, values)
 
 def parse_primary() -> Expr:
 
+    if matches(parser.lexer.VARIABLE):
+        token: Token = prev()
+        token.text = token.text[1:]
+        return Variable(token)
     if matches(parser.lexer.IDENT):
         return Variable(prev())
     if matches(parser.lexer.ML_COMMENT):
         return Comment(prev())
-    if matches(parser.lexer.STRING):
+    if matches(parser.lexer.STRING, parser.lexer.PATH):
         return Literal(prev())
-
-    # For right now just skip
-    advance()
+    # if matches(parser.lexer.NEW_LINE):
+    #     advance()
+    else:
+        error(peek().line, peek().column, 
+              f"Unimplementd type: {peek().text}, type: {peek().type}")
 
 
 
@@ -127,7 +140,9 @@ def consume(kind: int, err_message: str) -> Token:
     if matches(kind):
         return prev()
 
-    error(err_message)
+    l: int = peek().line
+    c: int = peek().column
+    error(l, c, err_message)
 
 def error(line: int, col: int, message: str) -> None:
     print(f"[parser-error][{line}:{col}] {message}")

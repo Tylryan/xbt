@@ -17,8 +17,10 @@ COMMA  : ',';
 BANG_CARROT: '$^';
 
 ML_COMMENT : '/*' .*? '*/' ;
-SHELL      : '$'.*? '\n' ;
-IDENT      : [a-zA-Z_\-/.]+ [/a-zA-Z_\-!?.]*;
+SHELL      : '$' WS+ .+? '\n' ;
+VARIABLE   : '$'[a-zA-Z_\-]+ [/a-zA-Z_\-]*;
+IDENT   : [a-zA-Z_\-]+ [/a-zA-Z_\-]*;
+PATH       : [a-zA-Z_\-/.]+ [/a-zA-Z_\-!?.]*;
 
 WS         : [ \t\r] -> skip ;
-NEW_LINE   : '\n';
+NEW_LINE   : '\n' -> skip;

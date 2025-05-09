@@ -14,21 +14,38 @@ rule All {
  	 * if needed.
  	 */
 
-    /* TODO(tyler): Add support for multiple files. */
-    build_files  = "examples/c_project/main.c" "hello world";
-    output_files = "examples/c_project/a.out" ;
+    /* TODO(tyler): Allow for variable references/
+     * expansion on the right hand side of assignment
+     * expressions
+     *
+     * TODO(tyler): Allow string concatonation or
+     * interpolation.
+     * $project_dir = "examples/c_project"
+     * $build_files  = $project_dir + "/main.c"
+     *                 $project_dir + "/helper.o";
+     */
+
+    $build_files  = "examples/c_project/main.c" 
+                    "examples/c_project/helper.o";
+
+    $output_files = "examples/c_project/a.out" ;
  
-    /* TODO(tyler): Eventually add support for '$^' and '$@' */
-	$ gcc -o examples/c_project/a.out examples/c_project/main.c examples/c_project/helper.o
-    $ ./examples/c_project/a.out
+	$ gcc -o $output_files $build_files
 
 }
 
-rule Fake {
-    /* TODO: If no build_files or output_files, then run
+rule Helper {
+    /* If no build_files or output_files, then run
      * rule like a .PHONY directive. */
-    build_files  = "examples/c_project/helper.c" "hello world";
-    output_files = "examples/c_project/helper.o" ;
+    $project_dir  = "examples/c_project";
+    $watch_files  = "${project_dir}/helper.h";
+    $build_files  = "${project_dir}/helper.c";
+    $output_files = "${project_dir}/helper.o" ;
 
-    $ gcc -o examples/c_project/helper.o -c examples/c_project/helper.c
+    $ gcc -o $output_files -c $build_files
+}
+
+rule Fake {
+
+    $ echo "This should run every single time"
 }
