@@ -34,7 +34,7 @@ rule All {
 
 }
 
-rule Fake {
+rule Helper {
     /* If no build_files or output_files, then run
      * rule like a .PHONY directive. */
     $project_dir  = "examples/c_project";
@@ -43,4 +43,9 @@ rule Fake {
     $output_files = "${project_dir}/helper.o" ;
 
     $ gcc -o $output_files -c $build_files
+}
+
+rule Fake {
+
+    $ echo "This should run every single time"
 }
