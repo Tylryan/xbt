@@ -84,6 +84,9 @@ def parse_assignment() -> Expr:
 
     var: Variable = expr
     value: Expr = parse_expression()
+
+    consume(parser.lexer.SEMI,
+            "Missing ';' in variable assignment.")
     return Assign(var, value)
 
 def parse_primary() -> Expr:
@@ -127,7 +130,9 @@ def consume(kind: int, err_message: str) -> Token:
     if matches(kind):
         return prev()
 
-    error(err_message)
+    l: int = peek().line
+    c: int = peek().column
+    error(l, c, err_message)
 
 def error(line: int, col: int, message: str) -> None:
     print(f"[parser-error][{line}:{col}] {message}")
