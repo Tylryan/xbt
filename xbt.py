@@ -3,7 +3,7 @@ from antlr4 import *
 
 from lexer.XbtLexer import XbtLexer
 from parser.xbt_parser import parse
-from xbt_utils import read_file
+from xbt_utils import read_file, interpolate
 from parser.exprs import *
 
 from sys import stdout
@@ -84,8 +84,15 @@ def eval_rule(rule: Rule) ->  None:
     build_files: list[str] = rule.environment.get("build_files", [])
     output_files: list[str] = rule.environment.get("output_files", [])
 
-    build_files = trim_quotes(build_files)
-    output_files = trim_quotes(output_files)
+    # build_files = trim_quotes(build_files)
+    # output_files = trim_quotes(output_files)
+
+    # build_files = trim_quotes(build_files)
+    # output_files = trim_quotes(output_files)
+
+    build_files = [interpolate(f, rule.environment) for f in build_files]
+    output_files = [interpolate(f, rule.environment) for f in output_files]
+
 
     import os
     from os.path import getctime
@@ -154,8 +161,8 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
         vars: list[str] = local_env.get(variable[1:], [])
         if vars == []: return variable
 
-        vars = trim_quotes(vars)
-        return ' '.join(vars)
+        # vars = trim_quotes(vars)
+        return interpolate(' '.join(vars), local_env)
 
 
     commands = [ resolve_variable(var) for var in commands]
@@ -177,6 +184,8 @@ def eval_comment(comment: Comment) -> None:
 
 def eval_variable(variable: Variable, local_env: dict[str, object]) -> None:
     variable_name = variable.token.text
+    print("VARIABLE NAME: ", variable_name)
+    exit(1)
     if variable_name in local_env.keys():
         return local_env[variable_name]
 
@@ -188,12 +197,15 @@ def eval_variable(variable: Variable, local_env: dict[str, object]) -> None:
 
 def eval_assign(assign: Assign, local_env: dict[str, object]) -> None:
     values: list[object] = eval_list(assign.values, local_env)
-    # value: object = evaluate(assign.values, local_env)
     local_env[assign.variable.token.text] = values
     return None
 
 def eval_literal(literal: Literal) -> None:
-    return literal.token.text
+    # NOTE(tyler): For right now, pretty much
+    # everything is a string. Once more types
+    # are supported, I will have to check the
+    # type before trimming.
+    return trim_quote(literal.token.text)
 
 def error(line: int, col: int, message: str) -> None:
     print(f"[interpreter-error][{line}:{col}] {message}")

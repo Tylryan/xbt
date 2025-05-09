@@ -1,18 +1,10 @@
+import re
 
 
-def trim_quote(string: str) -> str:
-    assert isinstance(string, str)
-    return string[1:-1]
-# TODO(tyler): Put this somewhere else
-def trim_quotes(strings: list[str]) -> list[str]:
-    assert isinstance(strings, list)
-    return [trim_quote(s) for s in strings]
-
-def read_file(path: str) -> str:
-    f = open(path)
-    c = f.read()
-    f.close()
-    return c
+env = {
+    "name": "John",
+    "punc": "!"
+}
 
 # Pretty terrible, but I'll fix later.
 def interpolate(string: str, local_env: dict[str, object]) -> str:
@@ -40,7 +32,12 @@ def interpolate(string: str, local_env: dict[str, object]) -> str:
     for key_val in key_vals:
         key: str = key_val[0]
         var_name: str = key_val[1]
-        new_vals: list[str] = local_env.get(var_name, var_name)
-        for v in new_vals:
-            string_copy = string_copy.replace(key, v)
+        new_val: str = local_env.get(var_name, var_name)
+
+
+        string_copy = string_copy.replace(key, new_val)
     return string_copy
+
+
+
+print(interpolate("hello world", env))

@@ -37,9 +37,10 @@ rule All {
 rule Fake {
     /* If no build_files or output_files, then run
      * rule like a .PHONY directive. */
-    $watch_files  = "examples/c_project/helper.h";
-    $build_files  = "examples/c_project/helper.c";
-    $output_files = "examples/c_project/helper.o" ;
+    $project_dir  = "examples/c_project";
+    $watch_files  = "${project_dir}/helper.h";
+    $build_files  = "${project_dir}/helper.c";
+    $output_files = "${project_dir}/helper.o" ;
 
     $ gcc -o $output_files -c $build_files
 }
