@@ -1,8 +1,7 @@
 .PHONY: clean
 
 XbtLexer.tokens: XbtLexer.g4
-	# antlr4 $^ -Dlanguage=Python3
-	echo "hello"
+	antlr4 $^ -Dlanguage=Python3
 
 
 clean:

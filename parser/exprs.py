@@ -40,7 +40,7 @@ class Rule(Expr):
                 exprs.append(expr)
         return { 
             "rule": {
-                "name": self.name.token.text,
+                "name": self.name.token.text if self.name else None,
                 "exprs": [e.as_dict() for e in exprs]
             }
         }
