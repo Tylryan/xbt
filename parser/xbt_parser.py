@@ -29,7 +29,7 @@ def parse(lexer: XbtLexer) -> list:
         if peek() and peek().type == Token.EOF:
             break
 
-        expr: Expr = parse_rule()
+        expr: Expr = parse_globals()
         if expr:
             exprs.append(expr)
 
@@ -38,6 +38,15 @@ def parse(lexer: XbtLexer) -> list:
     # exit(1)
     return exprs
 
+
+def parse_globals() -> Expr:
+    if check(parser.lexer.VARIABLE) is False:
+        return parse_rule()
+
+
+    assignment: Assign = parse_assignment()
+    assignment.is_global = True
+    return assignment
 
 def parse_rule() -> Expr:
     if matches(parser.lexer.RULE) is False:
@@ -103,7 +112,7 @@ def parse_build_files() -> Expr:
 
     files: list[Expr] = []
     while not (at_end() or check(parser.lexer.DOT)):
-        if checks(parser.lexer.STRING):
+        if checks(parser.lexer.STRING, parser.lexer.VARIABLE):
             files.append(parse_primary())
 
         # I only expect something like Rule::member

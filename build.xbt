@@ -1,31 +1,15 @@
 
-/* TODO(tyler): Helper::output_files */
+$PROJECT_DIR = "examples/c_project" .
+
 rule Entry {
-    $project_dir  = "examples/c_project"   .
-    build_files  : "${project_dir}/main.c" Helper::$output_files  .
-    output_files : "${project_dir}/a.out"  .
-
-    $clean = $output_files .
-
-    $ gcc -o $output_files $build_files
+    build_files: "${PROJECT_DIR}/main.c"
+                 Helper::$output_files    .
+    $ echo $build_files
 }
 
 rule Helper {
-    $project_dir  = "examples/c_project"      .
-    /* build_files  : "${project_dir}/helper.c"  . */
-    /* watch_files  : "${project_dir}/helper.h"  . */
-    output_files : "${project_dir}/helper.o"  .
-    
-    $clean = $output_files .
+    build_files: "${PROJECT_DIR}/helper.c"  .
+    output_files: "${PROJECT_DIR}/helper.o" .
 
-    $ echo "Running Helper"
+    $ gcc -o $output_files -c $build_files
 }
-
-/* Commands are like 'make [command]' 
- * and are not ran unless specified.*/
-
-/* command clean { 
- *  $clean_files = Entry.$clean
- *  $ rm $clean_files
- * } 
- */

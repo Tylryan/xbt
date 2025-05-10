@@ -56,6 +56,12 @@ class Variable(Expr):
 class Assign(Expr):
     variable: Variable
     values: list[Expr]
+    is_global: bool
+
+    def __init__(self, variable: Variable, values: list[Expr], is_global: bool = False):
+        self.variable = variable
+        self.values = values
+        self.is_global = is_global
 
     def as_dict(self) -> dict[str, object]:
         values: list[object] = []

@@ -41,19 +41,35 @@ def main():
     # source: str = read_file(sys.argv[1])
     source: str = read_file("build.xbt")
     lexer: XbtLexer = XbtLexer(InputStream(source))
-    exprs: list[Expr] = parse(lexer)[::-1]
+    exprs: list[Expr] = parse(lexer)
 
-    # from pprint import pprint
-    # [pprint(x.as_dict()) for x in exprs ]
-    # exit(1)
+    def global_var_decs(exprs: list[Expr]) -> list[Assign]:
+        global_decs: list[Assign] = []
+        all_other: list[Expr] = []
+        for expr in exprs:
+            if isinstance(expr, Assign):
+                if expr.is_global:
+                    global_decs.append(expr)
+                    continue
+            all_other.append(expr)
+                
+        return (global_decs, all_other)
 
-    for expr in exprs:
+    from pprint import pprint
+    [pprint(x.as_dict()) for x in exprs ]
+
+    global_exprs, rest = global_var_decs(exprs)
+
+    for global_expr in global_exprs:
+        evaluate(global_expr)
+
+    for expr in rest[::-1]:
         evaluate(expr, {})
         
     if not rules_ran:
         print("No rules ran. Nothing to do.")
 
-def evaluate(expr: Expr, local_env: dict[str, object]) -> object:
+def evaluate(expr: Expr, local_env: dict[str, object] = {}) -> object:
     if expr is None:
         return None
 
@@ -115,9 +131,12 @@ def eval_file_dec(expr: BuildFiles | OutFiles | WatchFiles,
         elif isinstance(file, MemberAccess):
             res: list[str] = eval_member_access(file, local_env)
             files = files + res
+        elif isinstance(file, Variable):
+            res: list[str] = eval_variable(file, local_env)
+            files = files + res
         else:
-            err_msg = f"Invalid expression in '{expr.token.text}' declaration."
-            error(expr.token.line, expr.token.col,
+            err_msg = f"Invalid expression in '{expr.token.text}' declaration.'"
+            error(expr.token.line, expr.token.column,
                   err_msg)
     return files
 
@@ -168,8 +187,8 @@ def eval_rule(rule: Rule) ->  None:
     # Replace  potential variables in their values with
     # the expanded values those variables contain.
     if build_files and output_files:
-        build_files = [interpolate(f, rule.environment) for f in build_files]
-        output_files = [interpolate(f, rule.environment) for f in output_files]
+        build_files = [interpolate(f, global_env, rule.environment) for f in build_files]
+        output_files = [interpolate(f, global_env, rule.environment) for f in output_files]
 
     import os
     from os.path import getctime
@@ -234,6 +253,8 @@ def eval_rule(rule: Rule) ->  None:
     return (True, rule_name)
 
 def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
+    global global_env
+
     og_commands = shell.commands.text
     commands: list[str] = str(shell.commands.text)[1:].strip().split()
 
@@ -243,11 +264,18 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
     # like: `$ echo $?`.
     def resolve_variable(variable: str) -> str:
         if variable[0] != "$": return variable
-        vars: list[str] = local_env.get(variable[1:], [])
-        if vars == []: return variable
+        # If key is in local, set that
+        # Elif key is in global, set that
+        # Else, return original string
+        var_name: str = variable[1:]
+        vars: list[str] = []
+        if var_name in local_env.keys():
+            vars = local_env.get(var_name, [])
+        elif var_name in global_env.keys():
+            vars = global_env.get(var_name, [])
 
         # vars = trim_quotes(vars)
-        return interpolate(' '.join(vars), local_env)
+        return interpolate(' '.join(vars), global_env, local_env)
 
 
     commands = [ resolve_variable(var) for var in commands]
@@ -274,14 +302,22 @@ def eval_variable(variable: Variable, local_env: dict[str, object]) -> None:
         return local_env[variable_name]
 
     if variable_name in global_env.keys():
-        return global_env[variable_name]
+        res = global_env[variable_name]
+        return res
     
     error(variable.token.line, variable.token.column,
           f"undefined variable: {variable_name}")
 
 def eval_assign(assign: Assign, local_env: dict[str, object]) -> None:
+    global global_env
+
+
+    variable: Token = assign.variable.token
     values: list[object] = eval_list(assign.values, local_env)
-    local_env[assign.variable.token.text] = values
+    if assign.is_global:
+        global_env[variable.text] = values
+    else:
+        local_env[variable.text] = values
     return None
 
 def eval_literal(literal: Literal) -> str:

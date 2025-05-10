@@ -27,7 +27,7 @@ BANG_CARROT: '$^';
 
 ML_COMMENT : '/*' .*? '*/' ;
 SHELL      : '$' WS+ .+? '\n' ;
-VARIABLE   : '$'[a-zA-Z_\-]+ [/a-zA-Z_\-]*;
+VARIABLE   : '$'[a-zA-Z_\-]+ [a-zA-Z_\-]*;
 IDENT   : [a-zA-Z_\-]+ [/a-zA-Z_\-]*;
 PATH       : [a-zA-Z_\-/.]+ [/a-zA-Z_\-!?.]*;
 

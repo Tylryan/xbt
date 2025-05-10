@@ -1,5 +1,4 @@
 
-
 def trim_quote(string: str) -> str:
     assert isinstance(string, str)
     return string[1:-1]
@@ -17,7 +16,10 @@ def read_file(path: str) -> str:
 # Pretty terrible, but I'll fix later.
 # The purpose of this function is to replace ${var} with the
 # actual string it represents.
-def interpolate(string: str, local_env: dict[str, object]) -> str:
+def interpolate(string: str, 
+                global_env: dict[str, object],
+                local_env: dict[str, object]) -> str:
+
     if not string:
         return None
     string_copy: str = str(string)
@@ -44,7 +46,12 @@ def interpolate(string: str, local_env: dict[str, object]) -> str:
     for key_val in key_vals:
         key: str = key_val[0]
         var_name: str = key_val[1]
-        new_vals: list[str] = local_env.get(var_name, var_name)
+
+        new_vals: list[str] = []
+        if var_name in local_env.keys():
+            new_vals = local_env.get(var_name, var_name)
+        elif var_name in global_env.keys():
+            new_vals = global_env.get(var_name, var_name)
         for v in new_vals:
             string_copy = string_copy.replace(key, v)
     return string_copy
