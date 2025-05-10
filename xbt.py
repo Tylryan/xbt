@@ -284,6 +284,9 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
         # Elif key is in global, set that
         # Else, return original string
 
+        if not variable:
+            return None
+
         var_name: str = variable
         if var_name[0] == "$":
             var_name = variable[1:]

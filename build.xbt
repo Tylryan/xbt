@@ -1,18 +1,18 @@
 
 
 rule Entry {
-    $var = "Me" .
+    $project_dir  = "examples/c_project"      .
+    /* Below, 'Helper' would return "examples/c_project/helper.o" */
+    build_files  : "${project_dir}/main.c" Helper::$output_files  .
+    /* output_files : "${project_dir}/a.out"  . */
 
-    /* Referencing variables within shell commands
-     * do work.
-     * This would print 'Me'.*/
-
-    $ echo $var
-    /* However, referencing Rule Members doesn't
-     * seem to work. 
-     * This would print 'Branch::'. 
-     */
-    $ echo You::$cmd
+    $ echo Helper output_files: Helper::output_files
 }
 
-rule You { $cmd = "echo You" . }
+/* This rule would always run as it doesn't declare 'build_files'. */
+rule Helper {
+    $project_dir  = "examples/c_project"      .
+    output_files : "${project_dir}/helper.o"  .
+
+    $ echo "Running Helper"
+}
