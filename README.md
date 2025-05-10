@@ -13,12 +13,23 @@
  * (in this case 'SomeRule') is executed last.
  */
 
+/* Global Variables */
 $PROJECT_DIR = "examples/c_project" .
 
 rule Entry {
+    /* Local Members */
     build_files: "${PROJECT_DIR}/main.c"
                  Helper::$output_files    .
-    $ echo $build_files
+    output_files: "a.out"                 .
+
+    /* User Defined Members */
+    $my_var = "DONE!".
+
+    /* Access to local members */
+    $ gcc -o $build_files ; echo $my_var
+
+    /* Access to other Rule members. */
+    $ echo Helper outputs Helper::$output_files
 }
 
 rule Helper {

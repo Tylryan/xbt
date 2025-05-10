@@ -2,10 +2,13 @@
 
 rule Entry {
     $project_dir  = "examples/c_project"      .
-    /* Below, 'Helper' would return "examples/c_project/helper.o" */
-    build_files  : "${project_dir}/main.c" Helper::$output_files  .
-    /* output_files : "${project_dir}/a.out"  . */
+    /* Below, 'Helper' would return 
+     * "examples/c_project/helper.o" */
+    build_files  : "${project_dir}/main.c" 
+                    Helper::$output_files  .
+    output_files : "${project_dir}/a.out"  .
 
+    /* You can also reference
     $ echo Helper output_files: Helper::output_files
 }
 
