@@ -6,6 +6,7 @@ from parser.xbt_parser import parse
 from xbt_utils import read_file, interpolate
 from parser.exprs import *
 
+import sys
 from sys import stdout
 
 def trim_quote(string: str) -> str:
@@ -31,7 +32,9 @@ def main():
     global global_env
     global rules_ran
 
-    source: str = read_file("test.xbt")
+    # TODO(tyler): Make command line more robust.
+    # currently real easy to crash.
+    source: str = read_file(sys.argv[1])
     lexer: XbtLexer = XbtLexer(InputStream(source))
     exprs: list[Expr] = parse(lexer)[::-1]
 

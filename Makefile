@@ -1,7 +1,7 @@
 .PHONY: run clean
 
 all:
-	python xbt.py
+	python xbt.py build.xbt
 
 xbt:
 	make -C lexer/
