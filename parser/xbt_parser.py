@@ -89,8 +89,8 @@ def parse_assignment() -> Expr:
     while check(parser.lexer.STRING):
         values.append(parse_expression())
 
-    consume(parser.lexer.SEMI,
-            "Missing ';' in variable assignment.")
+    consume(parser.lexer.DOT,
+            "Missing '.' in variable assignment.")
     return Assign(var, values)
 
 def parse_primary() -> Expr:

@@ -26,9 +26,9 @@ rule All {
      */
 
     $build_files  = "examples/c_project/main.c" 
-                    "examples/c_project/helper.o";
+                    "examples/c_project/helper.o".
 
-    $output_files = "examples/c_project/a.out" ;
+    $output_files = "examples/c_project/a.out" .
  
 	$ gcc -o $output_files $build_files
 
@@ -37,10 +37,10 @@ rule All {
 rule Helper {
     /* If no build_files or output_files, then run
      * rule like a .PHONY directive. */
-    $project_dir  = "examples/c_project";
-    $watch_files  = "${project_dir}/helper.h";
-    $build_files  = "${project_dir}/helper.c";
-    $output_files = "${project_dir}/helper.o" ;
+    $project_dir  = "examples/c_project"      .
+    $watch_files  = "${project_dir}/helper.h" .
+    $build_files  = "${project_dir}/helper.c" .
+    $output_files = "${project_dir}/helper.o" .
 
     $ gcc -o $output_files -c $build_files
 }

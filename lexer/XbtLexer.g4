@@ -14,6 +14,8 @@ RPAR   : ')';
 EQUAL  : '=';
 SEMI   : ';';
 COMMA  : ',';
+
+DOT    : '.';
 BANG_CARROT: '$^';
 
 ML_COMMENT : '/*' .*? '*/' ;

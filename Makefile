@@ -1,9 +1,11 @@
 .PHONY: run clean
 
-all:
-	python xbt.py build.xbt
 
 xbt:
 	make -C lexer/
+
+run:
+	python xbt.py build.xbt
+
 clean:
 	make -C lexer/ clean
