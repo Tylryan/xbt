@@ -1,15 +1,18 @@
 
-$PROJECT_DIR = "examples/c_project" .
 
 rule Entry {
-    build_files: "${PROJECT_DIR}/main.c"
-                 Helper::$output_files    .
-    $ echo $build_files
+    $var = "Me" .
+
+    /* Referencing variables within shell commands
+     * do work.
+     * This would print 'Me'.*/
+
+    $ echo $var
+    /* However, referencing Rule Members doesn't
+     * seem to work. 
+     * This would print 'Branch::'. 
+     */
+    $ echo You::$cmd
 }
 
-rule Helper {
-    build_files: "${PROJECT_DIR}/helper.c"  .
-    output_files: "${PROJECT_DIR}/helper.o" .
-
-    $ gcc -o $output_files -c $build_files
-}
+rule You { $cmd = "echo You" . }

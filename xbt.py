@@ -252,39 +252,94 @@ def eval_rule(rule: Rule) ->  None:
     rules_ran+=1
     return (True, rule_name)
 
+
+def var_lookup(var_name: str, local_env: dict[str, object]) -> str | None:
+    # Check the local environment first
+    if var_name in local_env.keys():
+        return local_env.get(var_name)
+
+    # Then check the global. Return None
+    # if no variable was found.
+    return global_env.get(var_name, None)
+
+def var_exists(var_name: str, local_env: dict[str,object]) -> Rule | None:
+    global global_env
+    return var_name in local_env.keys() or \
+           var_name in global_env.keys()
+
 def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
     global global_env
 
     og_commands = shell.commands.text
     commands: list[str] = str(shell.commands.text)[1:].strip().split()
 
+
     # Check if the variable exists in the rule's scope.
     # if it doesn't, then return the string as is.
     # I'm guessing some people will want to run a command
     # like: `$ echo $?`.
-    def resolve_variable(variable: str) -> str:
-        if variable[0] != "$": return variable
+    def resolve_variable(variable: str, lenv) -> str | None:
+        og_var: str = variable
         # If key is in local, set that
         # Elif key is in global, set that
         # Else, return original string
-        var_name: str = variable[1:]
-        vars: list[str] = []
-        if var_name in local_env.keys():
-            vars = local_env.get(var_name, [])
-        elif var_name in global_env.keys():
-            vars = global_env.get(var_name, [])
 
-        # vars = trim_quotes(vars)
-        return interpolate(' '.join(vars), global_env, local_env)
+        var_name: str = variable
+        if var_name[0] == "$":
+            var_name = variable[1:]
+
+        to_unpack: list[str] = var_name.split("::")
+
+        potential_rule: str = ""
+        p_member      : str = ""
+
+        if len(to_unpack) == 2:
+            potential_rule = to_unpack[0]
+            p_member = to_unpack[1]
+
+        thing: object = None
+        if var_exists(potential_rule, lenv):
+            thing = var_lookup(potential_rule, lenv)
+        elif var_exists(var_name, lenv):
+            thing = var_lookup(var_name, lenv)
+        else:
+            return None
+
+        # If the thing in question is a rule,
+        # then look up the p_member in that scope.
+        if isinstance(thing, Rule):
+            rule: Rule = thing
+            without_dollar: str = p_member[1:]
+            return resolve_variable(without_dollar, 
+                                    rule.environment)
+
+        if isinstance(thing, list):
+            return interpolate(' '.join(thing),
+                               global_env,
+                               local_env)
+        return None
 
 
-    commands = [ resolve_variable(var) for var in commands]
-    print(f"$ {' '.join(commands)}")
+
+    resolved_commands: list[str] = []
+    for cmd in commands:
+        resolved: str | None = resolve_variable(cmd, local_env)
+
+        if resolved:
+            resolved_commands.append(resolved)
+            continue
+
+        resolved_commands.append(cmd)
+        
+        
+    # commands = [ resolve_variable(var,local_env) for var in commands]
+    # print(f"$ {' '.join(commands)}")
+    print(f"$ {' '.join(resolved_commands)}")
 
     import os
 
     line: int = shell.commands.line
-    return_code: int = os.system(' '.join(commands))
+    return_code: int = os.system(' '.join(resolved_commands))
     if return_code != 0:
         print(f"\n[build-error: {line}] Exit Code {return_code}.") 
         exit(return_code)

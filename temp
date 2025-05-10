@@ -1,3 +1,21 @@
+
+/* Using Helper::$cmd in the Shell */
+$PROJECT_DIR = "examples/c_project" .
+
+rule Entry {
+    build_files: "${PROJECT_DIR}/main.c"
+                 Helper::$output_files    .
+                 
+    $ echo $build_files ; Helper::$cmd
+}
+
+rule Helper {
+    build_files: "${PROJECT_DIR}/helper.c"  .
+    output_files: "${PROJECT_DIR}/helper.o" .
+    $cmd: gcc -o $output_files -c $build_files
+}
+
+
 /* import "path/to/file.xbt */
 /* 
  * RULE: This is a concept, not an actual file or anything.
