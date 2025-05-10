@@ -149,6 +149,12 @@ def parse_assignment() -> Expr:
     var: Variable = expr
     values: list[Expr] = []
     
+    if check(parser.lexer.DOT):
+        error(peek().line, peek().column,
+              f"Missing values in assignment expression for "
+              f"variable '{var.token.text}'.")
+
+
     while check(parser.lexer.STRING) or check(parser.lexer.VARIABLE):
         values.append(parse_expression())
 
