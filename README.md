@@ -11,7 +11,7 @@ The program is a set of rules (`rule`) where each rule contains a set of input f
 (`build_files`), a set of output files (`output_files`), and a set of shell commands
 to execute. The program loops through the set of rules in the opposite order in which
 they were declared. For each rule, if any of the input files are newer than the output 
-files, then execute the that rule's set of shell commands; else skip.
+files, then execute that rule's set of shell commands; else skip.
 
 However, if you want to have a rule run everytime, then don't declare `build_files` 
 and/or `output_files`.
@@ -53,3 +53,9 @@ rule Helper {
 
 
 ## Build
+There are only two dependencies:
+- 1. `make`:
+- 1. `antlr4`: > 4.13.2
+- 2. `python`: > 3.12.6
+
+Simply run `make`.
