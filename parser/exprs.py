@@ -81,7 +81,7 @@ class Literal(Expr):
 @dataclass
 class BuildFiles(Expr):
     token: Token
-    files: list[Literal]
+    files: list[Expr]
 
     def as_dict(self) -> dict[str, object]:
         return { 
@@ -112,5 +112,19 @@ class WatchFiles(Expr):
         return { 
             "watch-files": {
                     "files": [x.as_dict() for x in self.files]
+                }
+        }
+
+@dataclass
+class MemberAccess(Expr):
+    # Rule::member ;
+    rule_name: Token
+    member   : Token
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "member-access": {
+                    "rule-name"  : self.rule_name.text,
+                    "member-name": self.member.text
                 }
         }

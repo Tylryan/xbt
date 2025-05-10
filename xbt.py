@@ -43,8 +43,8 @@ def main():
     lexer: XbtLexer = XbtLexer(InputStream(source))
     exprs: list[Expr] = parse(lexer)[::-1]
 
-    from pprint import pprint
-    [pprint(x.as_dict()) for x in exprs ]
+    # from pprint import pprint
+    # [pprint(x.as_dict()) for x in exprs ]
     # exit(1)
 
     for expr in exprs:
@@ -59,6 +59,7 @@ def evaluate(expr: Expr, local_env: dict[str, object]) -> object:
 
     if isinstance(expr, Rule)    : return eval_rule(expr)
     if isinstance(expr, Shell)   : return eval_shell(expr, local_env)
+    if isinstance(expr, MemberAccess): return eval_member_access(expr, local_env)
     if isinstance(expr,Comment)  : return eval_comment(expr)
     if isinstance(expr, Assign)  : return eval_assign(expr, local_env)
     if isinstance(expr, Literal) : return eval_literal(expr)
@@ -74,6 +75,33 @@ def eval_list(exprs: list[Expr], local_env: dict[str, object]) -> list[object]:
         values.append(evaluate(expr, local_env))
     return values
 
+def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> str:
+    assert isinstance(expr, MemberAccess)
+    global  global_env
+    # NOTE(tyler): Expects the '$' at the front,
+    # but this is not how variables are stored.
+    # The are stored without this sign.
+    member_name: str = expr.member.text[1:]
+    if member_name in local_env.keys():
+        return local_env[member_name]
+
+    rule_name: Token =expr.rule_name
+    err_msg = f"Undefined Rule: {rule_name.text}"
+    if rule_name.text not in global_env.keys():
+        error(rule_name.line, rule_name.column,
+              err_msg)
+
+    rule: Rule = global_env[expr.rule_name.text]
+    if member_name not in rule.environment.keys():
+        err_msg = f"Undefined Member: {expr.member.text}."
+        error(expr.member.line, expr.member.column,
+              err_msg)
+
+    # Note, this returns uninterpolated strings
+    res: list[str] = rule.environment[member_name]
+    return res
+
+
 def eval_file_dec(expr: BuildFiles | OutFiles | WatchFiles, 
                   local_env: dict[str, object]) ->  list[str]:
 
@@ -81,8 +109,16 @@ def eval_file_dec(expr: BuildFiles | OutFiles | WatchFiles,
 
     files: list[str] = []
     for file in expr.files:
-        res: str = eval_literal(file)
-        files.append(res)
+        if isinstance(file, Literal):
+            res: str = eval_literal(file)
+            files.append(res)
+        elif isinstance(file, MemberAccess):
+            res: list[str] = eval_member_access(file, local_env)
+            files = files + res
+        else:
+            err_msg = f"Invalid expression in '{expr.token.text}' declaration."
+            error(expr.token.line, expr.token.col,
+                  err_msg)
     return files
 
 

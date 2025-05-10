@@ -74,6 +74,21 @@ def parse_shell() -> Expr:
     # '$' .* '\n' ;
     return Shell(prev())
 
+def parse_member_access() -> Expr:
+    err_msg = "Expected parse_member_access to start with" \
+              f"an identifier. Found '{peek()}'"
+
+    assert check(parser.lexer.IDENT), err_msg
+    # member_access := IDENT '::' IDENT '.' ;
+    rule_name: Token = advance()
+
+    err_msg = "Expected a '::' when accessing a Rule member."
+    consume(parser.lexer.DCOLON, err_msg)
+
+    err_msg = "Missing member in member access expression."
+    member: Token = consume(parser.lexer.VARIABLE, err_msg)
+    return MemberAccess(rule_name, member)
+
 def parse_build_files() -> Expr:
     # build_files := "build_files" STRING+ "." ;
     keyword: Token = prev()
@@ -87,11 +102,20 @@ def parse_build_files() -> Expr:
 
 
     files: list[Expr] = []
-    while at_end() is False and check(parser.lexer.STRING):
-        files.append(parse_primary())
+    while not (at_end() or check(parser.lexer.DOT)):
+        if checks(parser.lexer.STRING):
+            files.append(parse_primary())
+
+        # I only expect something like Rule::member
+        # here.
+        if check(parser.lexer.IDENT):
+            member: MemberAccess = parse_member_access()
+            files.append(member)
     
-    consume(parser.lexer.DOT,
+
+    consume(parser.lexer.DOT ,
             f"Missing '.' in 'build_files' statement.")
+
     return BuildFiles(keyword, files)
 
 def parse_out_files() -> Expr:
@@ -226,6 +250,12 @@ def matches(*kinds: int) -> bool:
             return True
     return False
 
+def checks(*kinds: int) -> bool:
+    for kind in kinds:
+        if peek().type == kind:
+            return True
+    return False
+
 def check(kind: int) -> bool:
     return peek().type == kind
 
@@ -241,6 +271,7 @@ def advance() -> Token:
     global parser
     parser.prev = parser.peek
     parser.peek = parser.lexer.nextToken()
+    return parser.prev
 
 
 if __name__ == "__main__":

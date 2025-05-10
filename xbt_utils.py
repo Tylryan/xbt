@@ -15,6 +15,8 @@ def read_file(path: str) -> str:
     return c
 
 # Pretty terrible, but I'll fix later.
+# The purpose of this function is to replace ${var} with the
+# actual string it represents.
 def interpolate(string: str, local_env: dict[str, object]) -> str:
     if not string:
         return None

@@ -15,6 +15,7 @@ EQUAL  : '=';
 SEMI   : ';';
 COMMA  : ',';
 COLON  : ':';
+DCOLON : '::' ;
 
 // Keywords
 BUILD_FILES : 'build_files' ;

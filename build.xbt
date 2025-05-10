@@ -1,13 +1,31 @@
 
-rule Helper {
-    /* If no build_files or output_files, then run
-     * rule like a .PHONY directive. */
-    $project_dir  = "examples/c_project"      .
+/* TODO(tyler): Helper::output_files */
+rule Entry {
+    $project_dir  = "examples/c_project"   .
+    build_files  : "${project_dir}/main.c" Helper::$output_files  .
+    output_files : "${project_dir}/a.out"  .
 
-    build_files  : "${project_dir}/helper.c" .
-    watch_files  : "${project_dir}/helper.h" .
-    output_files : "${project_dir}/helper.o" .
-    $of = $output_files .
+    $clean = $output_files .
 
-    $ gcc -o $output_files -c $build_files
+    $ gcc -o $output_files $build_files
 }
+
+rule Helper {
+    $project_dir  = "examples/c_project"      .
+    /* build_files  : "${project_dir}/helper.c"  . */
+    /* watch_files  : "${project_dir}/helper.h"  . */
+    output_files : "${project_dir}/helper.o"  .
+    
+    $clean = $output_files .
+
+    $ echo "Running Helper"
+}
+
+/* Commands are like 'make [command]' 
+ * and are not ran unless specified.*/
+
+/* command clean { 
+ *  $clean_files = Entry.$clean
+ *  $ rm $clean_files
+ * } 
+ */
