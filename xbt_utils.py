@@ -16,6 +16,8 @@ def read_file(path: str) -> str:
 
 # Pretty terrible, but I'll fix later.
 def interpolate(string: str, local_env: dict[str, object]) -> str:
+    if not string:
+        return None
     string_copy: str = str(string)
 
     i = 0

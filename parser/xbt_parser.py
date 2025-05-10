@@ -60,14 +60,77 @@ def parse_rule() -> Expr:
     return Rule(name, exprs)
 
 def parse_expression() -> Expr:
-    if matches(parser.lexer.SHELL):
+    if matches(parser.lexer.SHELL): 
         return parse_shell()
+    
+    # Keywords
+    if matches(parser.lexer.BUILD_FILES): return parse_build_files()
+    if matches(parser.lexer.OUT_FILES)  : return parse_out_files()
+    if matches(parser.lexer.WATCH_FILES): return parse_watch_files()
     
     return parse_assignment()
 
 def parse_shell() -> Expr:
     # '$' .* '\n' ;
     return Shell(prev())
+
+def parse_build_files() -> Expr:
+    # build_files := "build_files" STRING+ "." ;
+    keyword: Token = prev()
+
+    consume(parser.lexer.COLON,
+            "Missing ':' in 'build_files' declaration.")
+    
+    if check(parser.lexer.DOT):
+        error(peek().line, peek().column,
+              f"Missing values in 'build_files' declaration.")
+
+
+    files: list[Expr] = []
+    while at_end() is False and check(parser.lexer.STRING):
+        files.append(parse_primary())
+    
+    consume(parser.lexer.DOT,
+            f"Missing '.' in 'build_files' statement.")
+    return BuildFiles(keyword, files)
+
+def parse_out_files() -> Expr:
+    # build_files := "build_files" STRING+ "." ;
+    keyword: Token = prev()
+
+    consume(parser.lexer.COLON,
+            "Missing ':' in 'out_files' declaration.")
+
+    if check(parser.lexer.DOT):
+        error(peek().line, peek().column,
+              f"Missing values in 'build_files' declaration.")
+
+    files: list[Expr] = []
+    while at_end() is False and check(parser.lexer.STRING):
+        files.append(parse_primary())
+    
+    consume(parser.lexer.DOT,
+            f"Missing '.' in 'out_files' statement.")
+    return OutFiles(keyword, files)
+
+def parse_watch_files() -> Expr:
+    # build_files := "build_files" STRING+ "." ;
+    keyword: Token = prev()
+
+    consume(parser.lexer.COLON,
+            "Missing ':' in 'watch_files' declaration.")
+
+    if check(parser.lexer.DOT):
+        error(peek().line, peek().column,
+              f"Missing values in 'build_files' declaration.")
+
+    files: list[Expr] = []
+    while at_end() is False and check(parser.lexer.STRING):
+        files.append(parse_primary())
+    
+    consume(parser.lexer.DOT,
+            f"Missing '.' in 'watch_files' statement.")
+    return WatchFiles(keyword, files)
 
 def parse_assignment() -> Expr:
 
@@ -86,7 +149,7 @@ def parse_assignment() -> Expr:
     var: Variable = expr
     values: list[Expr] = []
     
-    while check(parser.lexer.STRING):
+    while check(parser.lexer.STRING) or check(parser.lexer.VARIABLE):
         values.append(parse_expression())
 
     consume(parser.lexer.DOT,

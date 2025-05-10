@@ -14,6 +14,12 @@ RPAR   : ')';
 EQUAL  : '=';
 SEMI   : ';';
 COMMA  : ',';
+COLON  : ':';
+
+// Keywords
+BUILD_FILES : 'build_files' ;
+OUT_FILES   : 'output_files';
+WATCH_FILES : 'watch_files' ;
 
 DOT    : '.';
 BANG_CARROT: '$^';

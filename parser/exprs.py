@@ -76,3 +76,41 @@ class Literal(Expr):
 
     def as_dict(self) -> dict[str, object]:
         return { "literal": {self.token.text } }
+
+
+@dataclass
+class BuildFiles(Expr):
+    token: Token
+    files: list[Literal]
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "build-files": {
+                    "files": [x.as_dict() for x in self.files]
+                }
+        }
+
+@dataclass
+class OutFiles(Expr):
+    token: Token
+    files: list[Expr]
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "out-files": {
+                    "files": [x.as_dict() for x in self.files]
+                }
+        }
+
+
+@dataclass
+class WatchFiles(Expr):
+    token: Token
+    files: list[Literal]
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "watch-files": {
+                    "files": [x.as_dict() for x in self.files]
+                }
+        }
