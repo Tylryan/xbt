@@ -1,0 +1,15 @@
+/* If "cat.py is newer than "hello-world.txt",
+ * then execute the python command
+ */
+rule Run {
+    build_files : "cat.py"          .
+    output_files: "hello-world.txt" .
+    /* Eventually I'll have a watch_files
+     * keyword to distinguish between files that
+     * are used in shell commands and files that
+     * are not.
+     */
+    $watch_files = $output_files     .
+
+    $ python $build_files $watch_files
+}
