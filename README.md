@@ -96,10 +96,10 @@ rule Email {
 ## Build
 Below are the prerequisite programs required to be on your
 machine if you would like to build Xbt from source.
-- 1. `make`       : > 4.4.1
-- 2. `antlr4`     : > 4.13.2
-- 3. `python`     : > 3.12.6
-- 3. `pyinstaller`: > 6.11.0
+1. `make`       : > 4.4.1
+2. `antlr4`     : > 4.13.2
+3. `python`     : > 3.12.6
+4. `pyinstaller`: > 6.11.0
 
 To build this project, simply run `make`. This will compile
 the lexer (Antlr) and create a binary stored in `dist/xbt`.
