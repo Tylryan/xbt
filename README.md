@@ -6,6 +6,29 @@ I wanted a build tool that followed an incremental compile approach similar to M
 but with different features and in a language that is more intuitive to me. So 
 instead of looking around, I figured I'd try to make my own.
 
+Suppose you were writing a program that takes in `some-file.txt` as a command line
+argument like `./a.out some-file.txt` and that everytime `some-file.txt` got updated,
+you could run `make` and it would compile some set of shell commands. The file
+would looks something like this right?
+> In the next section, the same example is done with xbt.
+```make
+# If some-file.txt changes,
+# then execute the following commands.
+all: a.out some-file.txt
+    ./a.out $^
+    
+# If main.c, or helper.o or change, 
+# then execute the following commands.
+a.out: main.c helper.o
+    gcc -o $@ $^
+    $@ some-file.txt
+
+# If helper.c, helper.o, or helper.h change,
+# then execute the following commands.
+helper.o: helper.c helper.o helper.h
+    gcc -o $@ -c $^
+```
+
 ## At A Glance
 The program is a set of rules (`rule`) where each rule contains a set of input files 
 (`build_files`), a set of output files (`output_files`), and a set of shell commands
@@ -19,35 +42,53 @@ and/or `output_files`.
 > For a more in depth look into the language, see 
 > [XBT Lang Introduction](./docs/xbt_lang/language_intro.md)
 ```
-/* Rules are executed in the reverse order they
- * are defined (LIFO), where the top-most rule 
- * (in this case 'SomeRule') is executed last.
- */
+/* Declare global variables */
+$PREFIX = "" .
 
-/* Global Variables */
-$PROJECT_DIR = "examples/c_project" .
 
-rule Entry {
-    /* Local Members */
-    build_files: "${PROJECT_DIR}/main.c"
-                 Helper::$output_files    .
-    output_files: "a.out"                 .
+/* This rule can be given any name */
+rule Run {
+    watch_files: "${PREFIX}/some-file.txt" .
+
+    $ Main::output_files $watch_files
+}
+
+/* 'Main' will be the last rule to execute */
+rule Main {
+    /* Designated Members */
+    build_files : "${PREFIX}/main.c" 
+                   Helper::$output_files .
+
+    output_files: "${PREFIX}/a.out"      .
 
     /* User Defined Members */
-    $my_var = "DONE!".
+    $exit_message = "Done compiling!"    .
 
-    /* Access to local members */
-    $ gcc -o $build_files ; echo $my_var
-
-    /* Access to other Rule members. */
-    $ echo Helper outputs Helper::$output_files
+    /* Shell Commands */
+    $ gcc -o $@ $^ $#
+    $ gcc -o $output_files $build_files
+    $ echo $exit_message
 }
 
 rule Helper {
-    build_files: "${PROJECT_DIR}/helper.c"  .
-    output_files: "${PROJECT_DIR}/helper.o" .
+    build_files : "${PREFIX}/helper.c" .
+    /* If "helper.h" is changed, it should
+     * trigger the shell commands. They
+     * just aren't used in the shell commands
+     */
+    watch_files : "${PREFIX}/helper.h" .
+    output_files: "${PREFIX}/helper.o" .
 
     $ gcc -o $output_files -c $build_files
+}
+
+/* This would be the first thing executed if
+ * "hello.txt" is updated.
+ */
+rule Email {
+    watch_files: "hello.txt" .
+
+    $ python email_self.py $watch_files .
 }
 ```
 

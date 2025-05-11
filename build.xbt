@@ -1,20 +1,26 @@
 /* Declare global variables */
+
 $PREFIX = "examples/c_project" .
 
 /* 'Main' will be the last rule to execute */
-rule Main {
-    /* Designated Members */
-    build_files : "${PREFIX}/main.c" 
-                   Helper::$output_files .
-    output_files: "${PREFIX}/a.out"      .
+/* `build Main {}`. */
 
-    /* User Defined Members */
-    $exit_message = "Done compiling!"    .
+rule Bin {
+	/* Designated Members */
+	build_files : "${PREFIX}/main.c" 
+		          Helper::$output_files  .
+	output_files: "${PREFIX}/a.out"      . 
 
-    /* Shell Commands */
-    $ gcc -o $output_files $build_files
-    $ echo $exit_message
+	/* User Defined Members */ 
+    $bin          = $output_files        .
+	$exit_message = "Done compiling!"    .
+	$clean        = $output_files        .
+
+	/* Shell Commands */
+	$ gcc -o $output_files $build_files
+	$ echo $exit_message
 }
+
 
 rule Helper {
     build_files : "${PREFIX}/helper.c" .
@@ -24,6 +30,26 @@ rule Helper {
      */
     watch_files : "${PREFIX}/helper.h" .
     output_files: "${PREFIX}/helper.o" .
+    $clean = $output_files             .
 
     $ gcc -o $output_files -c $build_files
 }
+
+/* A command is the same thing as declaring .PHONY
+ * in a Makefile.
+ * `xbt clean run` should be the syntax for running
+ * from the command line.
+ */
+cmd run {
+    /* This will run `a.out` when the user runs
+     * `make run` only if "some-file.txt" has
+     * been updated.
+     */
+    watch_files: "some-file.txt" .
+    $ Main::$bin
+}
+
+cmd clean {
+	$ rm Main::$clean
+}
+

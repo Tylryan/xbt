@@ -4,6 +4,7 @@ from __future__ import annotations
 from antlr4 import Token
 from lexer.XbtLexer import XbtLexer
 from parser.exprs import *
+import sys
 
 class Parser:
     index: int
@@ -248,7 +249,7 @@ def consume(kind: int, err_message: str) -> Token:
 
 def error(line: int, col: int, message: str) -> None:
     print(f"[parser-error][{line}:{col}] {message}")
-    exit(1)
+    sys.exit(1)
 
 def matches(*kinds: int) -> bool:
     to_match = peek().type

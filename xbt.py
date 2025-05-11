@@ -1,3 +1,4 @@
+from __future__ import annotations
 from antlr4 import *
 
 
@@ -31,7 +32,7 @@ BUILD_FILES  =  "build_files"
 OUTPUT_FILES =  "output_files"
 WATCH_FILES  =  "watch_files"
 
-def main():
+def main(path: str):
     global global_env
     global rules_ran
 
@@ -39,7 +40,7 @@ def main():
     # currently real easy to crash.
 
     # source: str = read_file(sys.argv[1])
-    source: str = read_file("build.xbt")
+    source: str = read_file(path)
     lexer: XbtLexer = XbtLexer(InputStream(source))
     exprs: list[Expr] = parse(lexer)
 
@@ -345,7 +346,7 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
     return_code: int = os.system(' '.join(resolved_commands))
     if return_code != 0:
         print(f"\n[build-error: {line}] Exit Code {return_code}.") 
-        exit(return_code)
+        sys.exit(return_code)
 
     return None
 
@@ -387,7 +388,8 @@ def eval_literal(literal: Literal) -> str:
 
 def error(line: int, col: int, message: str) -> None:
     print(f"[interpreter-error][{line}:{col}] {message}")
-    exit(1)
+    sys.exit(1)
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(sys.argv[1])

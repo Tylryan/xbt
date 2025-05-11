@@ -7,8 +7,7 @@ $PREFIX = "" .
 /* 'Main' will be the last rule to execute */
 rule Main {
     /* Designated Members */
-    build_files : "${PREFIX}/main.c" 
-                   Helper::$output_files .
+    build_files : "${PREFIX}/main.c" Helper::$output_files .
 
     output_files: "${PREFIX}/a.out"      .
 
