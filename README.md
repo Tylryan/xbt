@@ -94,9 +94,14 @@ rule Email {
 
 
 ## Build
-There are only two dependencies:
-- 1. `make`:
-- 1. `antlr4`: > 4.13.2
-- 2. `python`: > 3.12.6
+Below are the prerequisite programs required to be on your
+machine if you would like to build Xbt from source.
+- 1. `make`       : > 4.4.1
+- 2. `antlr4`     : > 4.13.2
+- 3. `python`     : > 3.12.6
+- 3. `pyinstaller`: > 6.11.0
 
-Simply run `make`.
+To build this project, simply run `make`. This will compile
+the lexer (Antlr) and create a binary stored in `dist/xbt`.
+
+Currently, `xbt` requires the path a build file. If you would like an example build file to test, you can look for `build.xbt` in the `examples` directory or rebuild Xbt itself using the `build.xbt` file in the project's root directory (AKA where this REAME is located).

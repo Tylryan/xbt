@@ -1,7 +1,7 @@
 
 
 /* Declare global variables */
-$PREFIX = "" .
+$PREFIX = "." .
 
 
 /* 'Main' will be the last rule to execute */
