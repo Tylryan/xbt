@@ -104,4 +104,4 @@ machine if you would like to build Xbt from source.
 To build this project, simply run `make`. This will compile
 the lexer (Antlr) and create a binary stored in `dist/xbt`.
 
-Currently, `xbt` requires the path a build file. If you would like an example build file to test, you can look for `build.xbt` in the `examples` directory or rebuild Xbt itself using the `build.xbt` file in the project's root directory (AKA where this REAME is located).
+Currently, `xbt` requires the path a build file. If you would like an example build file to test, you can look for `build.xbt` in the [examples directory](./examples) or rebuild Xbt itself using the `build.xbt` file in the project's root directory (AKA where this REAME is located).
