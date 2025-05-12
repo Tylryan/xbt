@@ -1,37 +1,119 @@
 # XBT (X Build Tool)
 
 # XBT Lang
+## Motivation
+I wanted a build tool that followed an incremental compile approach similar to Make, 
+but with different features and in a language that is more intuitive to me. So 
+instead of looking around, I figured I'd try to make my own.
 
-**build_files**: Files required for toolchain command. For example, `.o` and `.c` files.
-**watch_files**: Any file you would like to compare change timestamps with your output_files. For example, `.h` files.
-**output_files**: Also known as Target Files. These are the files a rule will produce. For example, `a.out` files.
+Suppose you were writing a program that takes in `some-file.txt` as a command line
+argument like `./a.out some-file.txt` and that everytime `some-file.txt` got updated,
+you could run `make` and it would compile some set of shell commands. The file
+would looks something like this right?
+> In the next section, the same example is done with xbt.
+```make
+# If some-file.txt changes,
+# then execute the following commands.
+all: a.out some-file.txt
+    ./a.out $^
+    
+# If main.c, or helper.o or change, 
+# then execute the following commands.
+a.out: main.c helper.o
+    gcc -o $@ $^
+    $@ some-file.txt
 
-
+# If helper.c, helper.o, or helper.h change,
+# then execute the following commands.
+helper.o: helper.c helper.o helper.h
+    gcc -o $@ -c $^
 ```
-LIFO (stack)
-FIFO (queue)
 
-/* Rules are executed in the reverse order they
- * are defined (LIFO), where the top-most rule 
- * (in this case 'SomeRule') is executed last.
+## At A Glance
+The program is a set of rules (`rule`) where each rule contains a set of input files 
+(`build_files`), a set of output files (`output_files`), and a set of shell commands
+to execute. The program loops through the set of rules in the opposite order in which
+they were declared. For each rule, if any of the input files are newer than the output 
+files, then that rule's set of shell commands will be
+executed. 
+
+
+In order for a rule to be conditionally executable, you must declare two of the following:
+1. build_files
+2. output_files
+3. watch_files
+
+If build_files OR watch_files are newer than output_files, then execute
+rule. Otherwise the shell commands in the rule are not executed.
+
+However, if you want to have a rule run everytime, then don't declare `build_files` 
+and/or `output_files`.
+
+
+
+> For a more in depth look into the language, see 
+> [XBT Lang Introduction](./docs/xbt_lang/language_intro.md)
+```
+/* Declare global variables */
+$PREFIX = "" .
+
+
+/* This rule can be given any name */
+rule Run {
+    watch_files: "${PREFIX}/some-file.txt" .
+
+    $ Main::output_files $watch_files
+}
+
+/* 'Main' will be the last rule to execute */
+rule Main {
+    /* Designated Members */
+    build_files : "${PREFIX}/main.c" 
+                   Helper::$output_files .
+
+    output_files: "${PREFIX}/a.out"      .
+
+    /* User Defined Members */
+    $exit_message = "Done compiling!"    .
+
+    /* Shell Commands */
+    $ gcc -o $@ $^ $#
+    $ gcc -o $output_files $build_files
+    $ echo $exit_message
+}
+
+rule Helper {
+    build_files : "${PREFIX}/helper.c" .
+    /* If "helper.h" is changed, it should
+     * trigger the shell commands. They
+     * just aren't used in the shell commands
+     */
+    watch_files : "${PREFIX}/helper.h" .
+    output_files: "${PREFIX}/helper.o" .
+
+    $ gcc -o $output_files -c $build_files
+}
+
+/* This would be the first thing executed if
+ * "hello.txt" is updated.
  */
-rule SomeRule {
-    build_files  = "main.c";
-    output_files = "a.out";
+rule Email {
+    watch_files: "hello.txt" .
 
-    $ gcc main.c aux.o
-    $ ./a.out
-}
-
-rule DependencyRule {
-    watch_files  = "aux.h";
-    build_files  = "aux.c";
-    output_files = "aux.o";
-
-    /* NOTE */
-    $ gcc -o aux.o aux.c
-
-
+    $ python email_self.py $watch_files .
 }
 ```
-## Building
+
+
+## Build
+Below are the prerequisite programs required to be on your
+machine if you would like to build Xbt from source.
+1. `make`       : > 4.4.1
+2. `antlr4`     : > 4.13.2
+3. `python`     : > 3.12.6
+4. `pyinstaller`: > 6.11.0
+
+To build this project, simply run `make`. This will compile
+the lexer (Antlr) and create a binary stored in `dist/xbt`.
+
+Currently, `xbt` requires the path a build file. If you would like an example build file to test, you can look for `build.xbt` in the [examples directory](./examples) or rebuild Xbt itself using the `build.xbt` file in the project's root directory (AKA where this REAME is located).

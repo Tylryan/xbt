@@ -1,8 +1,10 @@
-.PHONY: clean
+.PHONY: clean compile
 
-XbtLexer.tokens: XbtLexer.g4
+XbtLexer.py: XbtLexer.g4
 	antlr4 $^ -Dlanguage=Python3
 
+compile:
+	make XbtLexer.py
 
 clean:
-	rm Xbt.interp Xbt*.py Xbt*.tokens
+	rm Xbt*.interp Xbt*.py Xbt*.tokens

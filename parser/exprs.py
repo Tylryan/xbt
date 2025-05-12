@@ -56,6 +56,12 @@ class Variable(Expr):
 class Assign(Expr):
     variable: Variable
     values: list[Expr]
+    is_global: bool
+
+    def __init__(self, variable: Variable, values: list[Expr], is_global: bool = False):
+        self.variable = variable
+        self.values = values
+        self.is_global = is_global
 
     def as_dict(self) -> dict[str, object]:
         values: list[object] = []
@@ -76,3 +82,65 @@ class Literal(Expr):
 
     def as_dict(self) -> dict[str, object]:
         return { "literal": {self.token.text } }
+
+
+@dataclass
+class BuildFiles(Expr):
+    token: Token
+    files: list[Expr]
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "build-files": {
+                    "files": [x.as_dict() for x in self.files]
+                }
+        }
+
+@dataclass
+class OutFiles(Expr):
+    token: Token
+    files: list[Expr]
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "out-files": {
+                    "files": [x.as_dict() for x in self.files]
+                }
+        }
+
+
+@dataclass
+class HelperFiles(Expr):
+    token: Token
+    files: list[Literal | Variable | MemberAccess]
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "helper-files": {
+                    "files": [x.as_dict() for x in self.files]
+                }
+        }
+
+@dataclass
+class HelperFile(Expr):
+    file: str | Literal | Variable | MemberAccess
+
+    def as_dict(self) -> dict[str, object]:
+        assert isinstance(self.file, Literal | Variable | MemberAccess)
+        return { 
+            "helper-file": self.file.as_dict() 
+        }
+
+@dataclass
+class MemberAccess(Expr):
+    # Rule::member ;
+    rule_name: Token
+    member   : Token
+
+    def as_dict(self) -> dict[str, object]:
+        return { 
+            "member-access": {
+                    "rule-name"  : self.rule_name.text,
+                    "member-name": self.member.text
+                }
+        }

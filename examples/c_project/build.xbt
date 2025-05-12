@@ -1,0 +1,31 @@
+
+
+/* Declare global variables */
+$PREFIX = "." .
+
+
+/* 'Main' will be the last rule to execute */
+rule Main {
+    /* Designated Members */
+    build_files : "${PREFIX}/main.c" Helper::$output_files .
+    output_files: "${PREFIX}/a.out"      .
+
+    /* User Defined Members */
+    $exit_message = "Done compiling!"     .
+
+    /* Shell Commands */
+    $ gcc -o $output_files $build_files
+    $ echo $exit_message
+
+}
+
+rule Helper {
+    /* Don't inlcude the helper.h when
+     * referencing build_files 
+     */ 
+    build_files : "${PREFIX}/helper.c" 
+                  !"${PREFIX}/helper.h".
+    output_files: "${PREFIX}/helper.o" .
+
+    $ gcc -o $@ -c $^
+}

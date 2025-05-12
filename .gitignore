@@ -1,0 +1,8 @@
+**/__pycache__/
+build
+dist
+xbt.spec
+scratch.py
+idea.txt
+**a.out
+**.o

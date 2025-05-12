@@ -1,0 +1,17 @@
+rule Xbt {
+	build_files : "xbt.py"   !Lexer::$output_files  .
+	output_files: "dist/xbt"                        .
+
+	$ pyinstaller $build_files -F
+}
+
+/* If "lexer/XbtLexer.g4" is newer than "XbtLexer.py" OR 
+ * XbtLexer.py doesn't exist, then run the antlr4 command. 
+ * Else, don't execute the shell commands.
+ */
+rule Lexer {
+	build_files : "lexer/XbtLexer.g4" .
+	output_files: "lexer/XbtLexer.py" .
+
+	$ antlr4 $build_files -Dlanguage=Python3
+}
