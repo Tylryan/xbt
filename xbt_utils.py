@@ -1,3 +1,5 @@
+from __future__ import annotations
+from parser.exprs import HelperFile
 
 def trim_quote(string: str) -> str:
     assert isinstance(string, str)
@@ -16,10 +18,13 @@ def read_file(path: str) -> str:
 # Pretty terrible, but I'll fix later.
 # The purpose of this function is to replace ${var} with the
 # actual string it represents.
-def interpolate(string: str, 
+def interpolate(string: str | HelperFile,
                 global_env: dict[str, object],
                 local_env: dict[str, object]) -> str:
 
+    if isinstance(string, HelperFile):
+        # TODO(tyler): [1:-1] is a hot fix.
+        string = string.file.token.text[1:-1]
     if not string:
         return None
     string_copy: str = str(string)

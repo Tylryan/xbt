@@ -97,13 +97,13 @@ def eval_list(exprs: list[Expr], local_env: dict[str, object]) -> list[object]:
 
 def eval_helper_file(expr: HelperFile, 
                       local_env: dict[str, object], 
-                      keep=True) -> str | HelperFile:
+                      keep=False) -> str | HelperFile:
     err_msg = f"Unimplemented type in HelperFile: {expr.file}."
     assert isinstance(expr.file,  Literal | Variable), err_msg
 
     # Only the shell would not want to keep the original
     # HelperFile.
-    if keep:
+    if not keep:
         return expr
 
     if isinstance(expr.file, Literal):
@@ -139,7 +139,7 @@ def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> str:
 
 
 def eval_file_dec(expr: BuildFiles | OutFiles | HelperFiles, 
-                  local_env: dict[str, object]) ->  list[str]:
+                  local_env: dict[str, object]) ->  list[str | HelperFile]:
 
     assert isinstance(expr, BuildFiles | OutFiles  | HelperFiles)
 
@@ -156,7 +156,7 @@ def eval_file_dec(expr: BuildFiles | OutFiles | HelperFiles,
             files = files + res
         elif isinstance(file, HelperFile):
             res: list[str | HelperFile] = eval_helper_file(file, 
-                                                           local_env)
+                                                           local_env, False)
             files = files + [res]
         else:
             err_msg = f"Invalid expression in '{expr.token.text}' declaration.'"
@@ -192,26 +192,36 @@ def eval_rule(rule: Rule) ->  None:
         # then assign their values to the keyword.
         if isinstance(e, BuildFiles | OutFiles | HelperFiles):
             key: str = e.token.text
+            if key == "$^": key = BUILD_FILES
+            if key == "$@": key = OUTPUT_FILES
             # At this point, the user has declared a keyword like
             # 'build_files'. If this evaluation returns an empty
             # list, then the user has forgotten to assign values.
             # This is a syntax error that should be caught by the
             # parser. But just in case, I'll assert it here.
-            values: list[str] = eval_file_dec(e, rule.environment)
+            values: list[str | HelperFile] = eval_file_dec(e, 
+                                                           rule.environment)
             assert values, f"The parser should not allow '{key}' to be none"
             rule.environment[key] = values if values else None
 
 
     # Immediately pull out the values for the keywords 
     # "build_files" and "output_files".
-    build_files: list[str] | None = rule.environment.get(BUILD_FILES, [])
+    build_files: list[str | HelperFile] | None = rule.environment.get(BUILD_FILES, [])
     output_files: list[str]| None = rule.environment.get(OUTPUT_FILES, [])
+    shell_commands: list[Shell] = []
+    for expr in rule.exprs:
+        if isinstance(expr, Shell):
+            shell_commands.append(expr)
+
+
 
     # String Interpolation:
     # Replace  potential variables in their values with
     # the expanded values those variables contain.
-    if build_files and output_files:
+    if build_files:
         build_files = [interpolate(f, global_env, rule.environment) for f in build_files]
+    if output_files:
         output_files = [interpolate(f, global_env, rule.environment) for f in output_files]
 
     import os
@@ -222,7 +232,11 @@ def eval_rule(rule: Rule) ->  None:
     # comparison and should simply run the shell scripts
     # every time.
     if build_files == [] or output_files == []:
-        eval_list(rule.exprs, rule.environment)
+        # NOTE: This is the point in the program where Shell/BuildFiles/etc
+        # are evaluated.
+        # TODO(tyler): This should ony evaluate Shell Commands right?
+        [ evaluate(expr, rule.environment) for expr  in shell_commands]
+        # eval_list(rule.exprs, rule.environment)
         rules_ran+=1
         return (True, rule_name)
 
@@ -313,7 +327,10 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
 
         var_name: str = variable
         # TODO: Make this more solid
-        if var_name == "$^" or var_name == "$@": pass
+        if var_name == "$^":
+            var_name = BUILD_FILES
+        elif var_name == "$@": 
+            var_name = OUTPUT_FILES
         elif var_name[0] == "$": var_name = variable[1:]
 
         to_unpack: list[str] = var_name.split("::")
