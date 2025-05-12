@@ -110,15 +110,25 @@ class OutFiles(Expr):
 
 
 @dataclass
-class WatchFiles(Expr):
+class HelperFiles(Expr):
     token: Token
-    files: list[Literal]
+    files: list[Literal | Variable]
 
     def as_dict(self) -> dict[str, object]:
         return { 
-            "watch-files": {
+            "helper-files": {
                     "files": [x.as_dict() for x in self.files]
                 }
+        }
+
+@dataclass
+class HelperFile(Expr):
+    file: Literal | Variable
+
+    def as_dict(self) -> dict[str, object]:
+        assert isinstance(self.file, Literal | Variable)
+        return { 
+            "helper-file": self.file.as_dict() 
         }
 
 @dataclass

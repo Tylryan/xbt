@@ -20,11 +20,15 @@
 .PHONY: clean run compile
 
 
+# You must specify "main.c helper.o" explicitly
+# instead of  referencing the helper rule's
+# output_files (Helper::$output_files in Xbt).
 a.out: main.c helper.o
-	gcc main.c helper.o -o $@
+	gcc $^ -o $@
 
 helper.o: helper.c helper.h
-	gcc -c helper.c -o helper.o
+	# Can't use "$^" here...
+	gcc -c helper.c -o $@
 
 
 # ----- Commands go at the bottom
@@ -33,7 +37,11 @@ helper.o: helper.c helper.h
 # change and `make run` was passed by the
 # user, then execute this rule.
 # Issue: This rule always executes when 
-#        the user runs `make run`.
+#        the user runs `make run`. Would be nice
+# 		 to be able to specify a dependency.
+# cmd run { 
+#   $ xbt compile && xbt run
+# }
 run: a.out some-file.txt
 	make a.out
 	$^

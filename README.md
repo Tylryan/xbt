@@ -34,10 +34,22 @@ The program is a set of rules (`rule`) where each rule contains a set of input f
 (`build_files`), a set of output files (`output_files`), and a set of shell commands
 to execute. The program loops through the set of rules in the opposite order in which
 they were declared. For each rule, if any of the input files are newer than the output 
-files, then execute that rule's set of shell commands; else skip.
+files, then that rule's set of shell commands will be
+executed. 
+
+
+In order for a rule to be conditionally executable, you must declare two of the following:
+1. build_files
+2. output_files
+3. watch_files
+
+If build_files OR watch_files are newer than output_files, then execute
+rule. Otherwise the shell commands in the rule are not executed.
 
 However, if you want to have a rule run everytime, then don't declare `build_files` 
 and/or `output_files`.
+
+
 
 > For a more in depth look into the language, see 
 > [XBT Lang Introduction](./docs/xbt_lang/language_intro.md)

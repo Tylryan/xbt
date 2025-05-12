@@ -1,55 +1,33 @@
-/* Declare global variables */
+/* This program will execute the shell commands in the Lexer rule
+ * ("antlr4 xbt.py -Dlanguage=Python3") if "XbtLexer.g4" gets updated 
+ * or doesn't exist. 
+ * 
+ * Then it will execute the shell command in the Xbt rule 
+ * ("pyinstaller $build_files -F") if "xbt.py" is newer than 
+ * "xbt-build.xbt" AND "xbt.py" is newer than
+ * Lexer::$output_files (i.e. "lexer/XbtLexer.py").
+ *
+ * If no files are updated, nothing is ran.
+ *
 
-$PREFIX = "examples/c_project" .
-
-/* 'Main' will be the last rule to execute */
-/* `build Main {}`. */
-
-rule Bin {
-	/* Designated Members */
-	build_files : "${PREFIX}/main.c" 
-		          Helper::$output_files  .
-	output_files: "${PREFIX}/a.out"      . 
-
-	/* User Defined Members */ 
-    $bin          = $output_files        .
-	$exit_message = "Done compiling!"    .
-	$clean        = $output_files        .
-
-	/* Shell Commands */
-	$ gcc -o $output_files $build_files
-	$ echo $exit_message
-}
-
-
-rule Helper {
-    build_files : "${PREFIX}/helper.c" .
-    /* If "helper.h" is changed, it should
-     * trigger the shell commands. They
-     * just aren't used in the shell commands
-     */
-    watch_files : "${PREFIX}/helper.h" .
-    output_files: "${PREFIX}/helper.o" .
-    $clean = $output_files             .
-
-    $ gcc -o $output_files -c $build_files
-}
-
-/* A command is the same thing as declaring .PHONY
- * in a Makefile.
- * `xbt clean run` should be the syntax for running
- * from the command line.
+/* If "xbt.py" OR Lexer::$output_files are newer than "dist/xbt", 
+ * then the shell commands in this rule (Xbt) will be executed.
+ * Else don't execute the shell commands.
  */
-cmd run {
-    /* This will run `a.out` when the user runs
-     * `make run` only if "some-file.txt" has
-     * been updated.
-     */
-    watch_files: "some-file.txt" .
-    $ Main::$bin
+rule Xbt {
+	build_files : "xbt.py"   Lexer::$output_files   .
+	output_files: "dist/xbt"                        .
+
+	$ pyinstaller $build_files -F
 }
 
-cmd clean {
-	$ rm Main::$clean
-}
+/* If "lexer/XbtLexer.g4" is newer than "XbtLexer.py" OR 
+ * XbtLexer.py doesn't exist, then run the antlr4 command. 
+ * Else, don't execute the shell commands.
+ */
+rule Lexer {
+	build_files : "lexer/XbtLexer.g4" .
+	output_files: "lexer/XbtLexer.py" .
 
+	$ antlr4 $build_files -Dlanguage=Python3
+}

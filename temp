@@ -1,51 +1,42 @@
+TODO 1: Implement helper_files. Think header files. You
+still would like to compare them like .c files, but you'd never
+use them in the shell comamnd. Separating watch_files from build_files
+will make it easier to drop them in shell commands.
 
-/* Using Helper::$cmd in the Shell */
-$PROJECT_DIR = "examples/c_project" .
+```
+build_files: "main.c" !"helper.o" .
+Helper(String)
+```
 
-rule Entry {
-    build_files: "${PROJECT_DIR}/main.c"
-                 Helper::$output_files    .
-                 
-    $ echo $build_files ; Helper::$cmd
-}
+RULE EXECUTION RULE (Add This Description to the readme and simplify the
+readme).
+If inputs are newer than outputs, then execute .
 
-rule Helper {
-    build_files: "${PROJECT_DIR}/helper.c"  .
-    output_files: "${PROJECT_DIR}/helper.o" .
-    $cmd: gcc -o $output_files -c $build_files
-}
-
-
-/* import "path/to/file.xbt */
-/* 
- * RULE: This is a concept, not an actual file or anything.
- * - build_files: Files to watch for changes.
- * - output_files: Files produced by 'build_files'.
- * - $ : This indicates a shell command.
- */
-
-rule All {
-    $build_files  = "examples/c_project/main.c" 
-                    "examples/c_project/helper.o".
-    $output_files = "examples/c_project/a.out"   .
- 
-	$ gcc -o $output_files $build_files
-}
+INPUT FILES TYPES
+build_files : Input files that will be used in shell commands.
+helper_files: Input files that will NOT be used in shell commands.
+output_files: ...
 
 rule Helper {
-    /* If no build_files or output_files, then run
-     * rule like a .PHONY directive. */
-    $project_dir  = "examples/c_project"     .
+    /* Inputs */
+    build_files : "helper.c" .
+    helper_files: "helper.h" .
 
-    build_files  : "${project_dir}/helper.c" .
-    watch_files  : "${project_dir}/helper.h" .
-    output_files : "${project_dir}/helper.o" .
-
-    $of = $output_files .
+    /* Outputs */
+    output_files: "helper.o" .
 
     $ gcc -o $output_files -c $build_files
 }
 
-rule Fake {
-    $ echo "This should run every single time"
-}
+
+TODO 2:
+Make the xbt interpreter read "build.xbt" file in the current directory or error when ran
+instead of requiring a file path.
+
+
+DONE WITH 0.2.0
+
+
+A fun little program:
+    Search up a directory tree on your computer, then all the way back down it collecting
+    paths to Makefiles. Then execute a random one :)

@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['xbt.py'],
+    ['xbt.py', 'lexer/XbtLexer.py'],
     pathex=[],
     binaries=[],
     datas=[],

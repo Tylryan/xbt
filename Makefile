@@ -1,5 +1,5 @@
 # make clean compile run
-EXAMPLE_BUILD=xbt-build.xbt
+EXAMPLE_BUILD=build.xbt
 XBT=xbt.py
 
 .PHONY: clean lexer run

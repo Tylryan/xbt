@@ -76,7 +76,7 @@ def parse_expression() -> Expr:
     # Keywords
     if matches(parser.lexer.BUILD_FILES): return parse_build_files()
     if matches(parser.lexer.OUT_FILES)  : return parse_out_files()
-    if matches(parser.lexer.WATCH_FILES): return parse_watch_files()
+    if matches(parser.lexer.HELPER_FILES): return parse_watch_files()
     
     return parse_assignment()
 
@@ -121,6 +121,13 @@ def parse_build_files() -> Expr:
         if check(parser.lexer.IDENT):
             member: MemberAccess = parse_member_access()
             files.append(member)
+        elif matches(parser.lexer.BANG):
+            res: Variable | Literal = parse_primary()
+            files.append(HelperFile(res))
+        else:
+            err_msg = f"Invalid expression in variable declaration: " \
+                f"'{peek().text}'."
+            error(peek().line, peek().column, err_msg)
     
 
     consume(parser.lexer.DOT ,
@@ -142,6 +149,7 @@ def parse_out_files() -> Expr:
     files: list[Expr] = []
     while at_end() is False and check(parser.lexer.STRING):
         files.append(parse_primary())
+
     
     consume(parser.lexer.DOT,
             f"Missing '.' in 'out_files' statement.")
@@ -164,7 +172,7 @@ def parse_watch_files() -> Expr:
     
     consume(parser.lexer.DOT,
             f"Missing '.' in 'watch_files' statement.")
-    return WatchFiles(keyword, files)
+    return HelperFiles(keyword, files)
 
 def parse_assignment() -> Expr:
 
@@ -172,6 +180,7 @@ def parse_assignment() -> Expr:
     c: int = column()
     expr: Expr = parse_primary()
 
+    # TODO: I think I want to change this to a COLON
     if matches(parser.lexer.EQUAL) is False:
         return expr
 

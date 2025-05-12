@@ -6,6 +6,7 @@ from lexer.XbtLexer import XbtLexer
 from parser.xbt_parser import parse
 from xbt_utils import read_file, interpolate
 from parser.exprs import *
+from pprint import pprint
 
 import sys
 from sys import stdout
@@ -44,6 +45,9 @@ def main(path: str):
     lexer: XbtLexer = XbtLexer(InputStream(source))
     exprs: list[Expr] = parse(lexer)
 
+    from pprint import pprint
+    [pprint(x.as_dict()) for x in exprs ]
+
     def global_var_decs(exprs: list[Expr]) -> list[Assign]:
         global_decs: list[Assign] = []
         all_other: list[Expr] = []
@@ -56,8 +60,6 @@ def main(path: str):
                 
         return (global_decs, all_other)
 
-    from pprint import pprint
-    [pprint(x.as_dict()) for x in exprs ]
 
     global_exprs, rest = global_var_decs(exprs)
 
@@ -83,7 +85,8 @@ def evaluate(expr: Expr, local_env: dict[str, object] = {}) -> object:
     if isinstance(expr, Variable): return eval_variable(expr, local_env)
     if isinstance(expr, BuildFiles): return eval_file_dec(expr, local_env)
     if isinstance(expr, OutFiles)  : return eval_file_dec(expr, local_env)
-    if isinstance(expr, WatchFiles): return eval_file_dec(expr, local_env)
+    if isinstance(expr, HelperFile): return eval_helper_file(expr, local_env)
+    if isinstance(expr, HelperFiles): return eval_file_dec(expr, local_env)
     else: error(f"[interpreter-error] unimplemented expression: {expr}")
 
 def eval_list(exprs: list[Expr], local_env: dict[str, object]) -> list[object]:
@@ -91,6 +94,22 @@ def eval_list(exprs: list[Expr], local_env: dict[str, object]) -> list[object]:
     for expr in exprs:
         values.append(evaluate(expr, local_env))
     return values
+
+def eval_helper_file(expr: HelperFile, 
+                      local_env: dict[str, object], 
+                      keep=True) -> str | HelperFile:
+    err_msg = f"Unimplemented type in HelperFile: {expr.file}."
+    assert isinstance(expr.file,  Literal | Variable), err_msg
+
+    # Only the shell would not want to keep the original
+    # HelperFile.
+    if keep:
+        return expr
+
+    if isinstance(expr.file, Literal):
+        return eval_literal(expr.file)
+    if isinstance(expr.file, Variable):
+        return eval_variable(expr.file, local_env)
 
 def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> str:
     assert isinstance(expr, MemberAccess)
@@ -119,10 +138,10 @@ def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> str:
     return res
 
 
-def eval_file_dec(expr: BuildFiles | OutFiles | WatchFiles, 
+def eval_file_dec(expr: BuildFiles | OutFiles | HelperFiles, 
                   local_env: dict[str, object]) ->  list[str]:
 
-    assert isinstance(expr, BuildFiles | OutFiles  | WatchFiles)
+    assert isinstance(expr, BuildFiles | OutFiles  | HelperFiles)
 
     files: list[str] = []
     for file in expr.files:
@@ -135,6 +154,10 @@ def eval_file_dec(expr: BuildFiles | OutFiles | WatchFiles,
         elif isinstance(file, Variable):
             res: list[str] = eval_variable(file, local_env)
             files = files + res
+        elif isinstance(file, HelperFile):
+            res: list[str | HelperFile] = eval_helper_file(file, 
+                                                           local_env)
+            files = files + [res]
         else:
             err_msg = f"Invalid expression in '{expr.token.text}' declaration.'"
             error(expr.token.line, expr.token.column,
@@ -167,7 +190,7 @@ def eval_rule(rule: Rule) ->  None:
             rule.environment[e.variable.token.text] = values
         # If found a these specific keywords,
         # then assign their values to the keyword.
-        if isinstance(e, BuildFiles | OutFiles | WatchFiles):
+        if isinstance(e, BuildFiles | OutFiles | HelperFiles):
             key: str = e.token.text
             # At this point, the user has declared a keyword like
             # 'build_files'. If this evaluation returns an empty
@@ -289,8 +312,9 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
             return None
 
         var_name: str = variable
-        if var_name[0] == "$":
-            var_name = variable[1:]
+        # TODO: Make this more solid
+        if var_name == "$^" or var_name == "$@": pass
+        elif var_name[0] == "$": var_name = variable[1:]
 
         to_unpack: list[str] = var_name.split("::")
 
@@ -317,8 +341,14 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
             return resolve_variable(without_dollar, 
                                     rule.environment)
 
+
         if isinstance(thing, list):
-            return interpolate(' '.join(thing),
+            no_helpers: list[str]  = []
+            for file_path in thing:
+                if isinstance(file_path, HelperFile):
+                    continue
+                no_helpers.append(file_path)
+            return interpolate(' '.join(no_helpers),
                                global_env,
                                local_env)
         return None
@@ -392,4 +422,9 @@ def error(line: int, col: int, message: str) -> None:
 
 if __name__ == "__main__":
     import sys
-    main(sys.argv[1])
+    path: str = ""
+    if len(sys.argv) == 2:
+        path == sys.argv[1]
+    else:
+        path = "test.build"
+    main(path)

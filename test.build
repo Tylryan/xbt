@@ -1,0 +1,5 @@
+rule Main {
+    $^: "hello.c" !"hello.h" .
+
+    $ echo $^
+}
