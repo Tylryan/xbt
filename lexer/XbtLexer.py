@@ -10,7 +10,7 @@ else:
 
 def serializedATN():
     return [
-        4,0,26,207,6,-1,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,
+        4,0,25,207,6,-1,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,
         2,6,7,6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,
         13,7,13,2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,
         19,2,20,7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,24,1,0,1,0,1,0,
@@ -28,7 +28,7 @@ def serializedATN():
         9,21,1,22,4,22,190,8,22,11,22,12,22,191,1,22,5,22,195,8,22,10,22,
         12,22,198,9,22,1,23,1,23,1,23,1,23,1,24,1,24,1,24,1,24,3,60,146,
         161,0,25,1,3,3,4,5,5,7,6,9,7,11,8,13,9,15,10,17,11,19,12,21,13,23,
-        14,25,1,27,24,29,15,31,25,33,26,35,16,37,17,39,18,41,19,43,20,45,
+        14,25,1,27,2,29,15,31,24,33,25,35,16,37,17,39,18,41,19,43,20,45,
         21,47,22,49,23,1,0,5,4,0,45,45,65,90,95,95,97,122,5,0,45,45,47,47,
         65,90,95,95,97,122,4,0,45,47,65,90,95,95,97,122,6,0,33,33,45,47,
         63,63,65,90,95,95,97,122,3,0,9,9,13,13,32,32,216,0,1,1,0,0,0,0,3,
@@ -94,7 +94,7 @@ class XbtLexer(Lexer):
     decisionsToDFA = [ DFA(ds, i) for i, ds in enumerate(atn.decisionToState) ]
 
     BUILD_FILES = 1
-    OUTPUT_FILES = 2
+    OUT_FILES = 2
     RULE = 3
     STRING = 4
     LBRACE = 5
@@ -116,25 +116,23 @@ class XbtLexer(Lexer):
     PATH = 21
     WS = 22
     NEW_LINE = 23
-    OUT_FILES = 24
-    DOLLAR_AT = 25
-    DOLLAR_CARROT = 26
+    DOLLAR_AT = 24
+    DOLLAR_CARROT = 25
 
     channelNames = [ u"DEFAULT_TOKEN_CHANNEL", u"HIDDEN" ]
 
     modeNames = [ "DEFAULT_MODE" ]
 
     literalNames = [ "<INVALID>",
-            "'build_files'", "'rule'", "'{'", "'}'", "'('", "')'", "'='", 
-            "';'", "','", "':'", "'::'", "'!'", "'helper_files'", "'.'", 
-            "'\\n'", "'output_files'", "'$@'", "'$^'" ]
+            "'build_files'", "'output_files'", "'rule'", "'{'", "'}'", "'('", 
+            "')'", "'='", "';'", "','", "':'", "'::'", "'!'", "'helper_files'", 
+            "'.'", "'\\n'", "'$@'", "'$^'" ]
 
     symbolicNames = [ "<INVALID>",
-            "BUILD_FILES", "OUTPUT_FILES", "RULE", "STRING", "LBRACE", "RBRACE", 
+            "BUILD_FILES", "OUT_FILES", "RULE", "STRING", "LBRACE", "RBRACE", 
             "LPAR", "RPAR", "EQUAL", "SEMI", "COMMA", "COLON", "DCOLON", 
             "BANG", "HELPER_FILES", "DOT", "ML_COMMENT", "SHELL", "VARIABLE", 
-            "IDENT", "PATH", "WS", "NEW_LINE", "OUT_FILES", "DOLLAR_AT", 
-            "DOLLAR_CARROT" ]
+            "IDENT", "PATH", "WS", "NEW_LINE", "DOLLAR_AT", "DOLLAR_CARROT" ]
 
     ruleNames = [ "RULE", "STRING", "LBRACE", "RBRACE", "LPAR", "RPAR", 
                   "EQUAL", "SEMI", "COMMA", "COLON", "DCOLON", "BANG", "BUILD_FILES", 

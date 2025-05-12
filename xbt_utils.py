@@ -20,11 +20,14 @@ def read_file(path: str) -> str:
 # actual string it represents.
 def interpolate(string: str | HelperFile,
                 global_env: dict[str, object],
-                local_env: dict[str, object]) -> str:
+                local_env: dict[str, object]) -> str | None:
 
     if isinstance(string, HelperFile):
+        # At this piont, contents should only 
+        # be a string.
         # TODO(tyler): [1:-1] is a hot fix.
-        string = string.file.token.text[1:-1]
+        string = string.file
+
     if not string:
         return None
     string_copy: str = str(string)

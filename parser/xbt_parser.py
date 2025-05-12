@@ -85,6 +85,8 @@ def parse_shell() -> Expr:
     return Shell(prev())
 
 def parse_member_access() -> Expr:
+    if check(parser.lexer.IDENT) is False:
+        return parse_primary()
     err_msg = "Expected parse_member_access to start with" \
               f"an identifier. Found '{peek()}'"
 
@@ -113,22 +115,26 @@ def parse_build_files() -> Expr:
 
     files: list[Expr] = []
     while not (at_end() or check(parser.lexer.DOT)):
-        if checks(parser.lexer.STRING, parser.lexer.VARIABLE):
-            files.append(parse_primary())
+        expr: Expr = None
+        if checks(parser.lexer.STRING, 
+                  parser.lexer.VARIABLE,
+                  parser.lexer.IDENT):
+            expr = parse_member_access()
 
-        # I only expect something like Rule::member
-        # here.
-        if check(parser.lexer.IDENT):
-            member: MemberAccess = parse_member_access()
-            files.append(member)
         elif matches(parser.lexer.BANG):
-            res: Variable | Literal = parse_primary()
-            files.append(HelperFile(res))
+            res: Variable | Literal | MemberAccess= parse_member_access()
+            expr = HelperFile(res)
+        # # I only expect something like Rule::member
+        # # here.
+        # if check(parser.lexer.IDENT):
+        #     member: MemberAccess = parse_member_access()
+        #     expr = member
         else:
             err_msg = f"Invalid expression in variable declaration: " \
                 f"'{peek().text}'."
             error(peek().line, peek().column, err_msg)
-    
+
+        files.append(expr)
 
     consume(parser.lexer.DOT ,
             f"Missing '.' in 'build_files' statement.")

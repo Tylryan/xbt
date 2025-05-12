@@ -97,9 +97,9 @@ def eval_list(exprs: list[Expr], local_env: dict[str, object]) -> list[object]:
 
 def eval_helper_file(expr: HelperFile, 
                       local_env: dict[str, object], 
-                      keep=False) -> str | HelperFile:
+                      keep=False) -> list[str]:
     err_msg = f"Unimplemented type in HelperFile: {expr.file}."
-    assert isinstance(expr.file,  Literal | Variable), err_msg
+    assert isinstance(expr.file,  Literal | Variable | MemberAccess), err_msg
 
     # Only the shell would not want to keep the original
     # HelperFile.
@@ -107,11 +107,14 @@ def eval_helper_file(expr: HelperFile,
         return expr
 
     if isinstance(expr.file, Literal):
-        return eval_literal(expr.file)
+        return [HelperFile(eval_literal(expr.file))]
     if isinstance(expr.file, Variable):
-        return eval_variable(expr.file, local_env)
+        return [HelperFile(eval_variable(expr.file, local_env))]
+    if isinstance(expr.file, MemberAccess):
+        evaled_files = eval_member_access(expr.file, local_env)
+        return [HelperFile(f) for f in evaled_files]
 
-def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> str:
+def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> list[str]:
     assert isinstance(expr, MemberAccess)
     global  global_env
     # NOTE(tyler): Expects the '$' at the front,
@@ -138,10 +141,9 @@ def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> str:
     return res
 
 
-def eval_file_dec(expr: BuildFiles | OutFiles | HelperFiles, 
+def eval_file_dec(expr: BuildFiles | OutFiles, 
                   local_env: dict[str, object]) ->  list[str | HelperFile]:
-
-    assert isinstance(expr, BuildFiles | OutFiles  | HelperFiles)
+    # assert isinstance(expr, BuildFiles | OutFiles  | HelperFiles)
 
     files: list[str] = []
     for file in expr.files:
@@ -155,9 +157,9 @@ def eval_file_dec(expr: BuildFiles | OutFiles | HelperFiles,
             res: list[str] = eval_variable(file, local_env)
             files = files + res
         elif isinstance(file, HelperFile):
-            res: list[str | HelperFile] = eval_helper_file(file, 
-                                                           local_env, False)
-            files = files + [res]
+            res: list[HelperFile] = eval_helper_file(file, 
+                                                           local_env, True)
+            files = files + res
         else:
             err_msg = f"Invalid expression in '{expr.token.text}' declaration.'"
             error(expr.token.line, expr.token.column,
@@ -215,7 +217,6 @@ def eval_rule(rule: Rule) ->  None:
             shell_commands.append(expr)
 
 
-
     # String Interpolation:
     # Replace  potential variables in their values with
     # the expanded values those variables contain.
@@ -243,7 +244,7 @@ def eval_rule(rule: Rule) ->  None:
     # At this point, the user has declared the files they wish to
     # watch. If those files don't exist, we should let them know
     # about it.
-    def files_exist_check(files: list[str], skip_error: bool = False) -> bool:
+    def files_exist_check(files: list[str | HelperFile], skip_error: bool = False) -> bool:
         for file in files:
             path_not_exists = os.path.isfile(file) is False
             if path_not_exists and skip_error == False:
@@ -286,7 +287,8 @@ def eval_rule(rule: Rule) ->  None:
     if newest_build_time < newest_output_time:
         return (False, rule_name)
 
-    eval_list(rule.exprs, rule.environment)
+    [ evaluate(expr, rule.environment) for expr  in shell_commands]
+    # eval_list(rule.exprs, rule.environment)
     rules_ran+=1
     return (True, rule_name)
 
@@ -363,8 +365,11 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
             no_helpers: list[str]  = []
             for file_path in thing:
                 if isinstance(file_path, HelperFile):
-                    continue
-                no_helpers.append(file_path)
+                    pass
+                else:
+                    no_helpers.append(file_path)
+            if no_helpers == []:
+                return ""
             return interpolate(' '.join(no_helpers),
                                global_env,
                                local_env)
@@ -376,7 +381,7 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
     for cmd in commands:
         resolved: str | None = resolve_variable(cmd, local_env)
 
-        if resolved:
+        if isinstance(resolved, str):
             resolved_commands.append(resolved)
             continue
 
@@ -401,7 +406,7 @@ def eval_comment(comment: Comment) -> None:
     #print(f"COMMENT: ", comment.token.text)
     return None
 
-def eval_variable(variable: Variable, local_env: dict[str, object]) -> None:
+def eval_variable(variable: Variable, local_env: dict[str, object]) -> object:
     variable_name = variable.token.text
 
     if variable_name in local_env.keys():
@@ -439,9 +444,10 @@ def error(line: int, col: int, message: str) -> None:
 
 if __name__ == "__main__":
     import sys
-    path: str = ""
+    # If no args, use `build.xbt`
     if len(sys.argv) == 2:
-        path == sys.argv[1]
+        path = sys.argv[1]
     else:
-        path = "test.build"
+        path = "build.xbt"
+
     main(path)

@@ -3,7 +3,7 @@
 
 lexer grammar XbtLexer;
 
-tokens {BUILD_FILES, OUTPUT_FILES}
+tokens {BUILD_FILES, OUT_FILES}
 
 RULE : 'rule';
 
@@ -23,9 +23,9 @@ BANG   : '!'   ;
 
 // Keywords
 BUILD_FILES  : 'build_files'  -> type(BUILD_FILES);
-OUT_FILES    : 'output_files' -> type(OUTPUT_FILES);
+OUT_FILES    : 'output_files' -> type(OUT_FILES);
 HELPER_FILES : 'helper_files' ;
-DOLLAR_AT    : '$@' -> type(OUTPUT_FILES);
+DOLLAR_AT    : '$@' -> type(OUT_FILES);
 DOLLAR_CARROT: '$^' -> type(BUILD_FILES);
 
 DOT    : '.';

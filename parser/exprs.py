@@ -112,7 +112,7 @@ class OutFiles(Expr):
 @dataclass
 class HelperFiles(Expr):
     token: Token
-    files: list[Literal | Variable]
+    files: list[Literal | Variable | MemberAccess]
 
     def as_dict(self) -> dict[str, object]:
         return { 
@@ -123,10 +123,10 @@ class HelperFiles(Expr):
 
 @dataclass
 class HelperFile(Expr):
-    file: Literal | Variable
+    file: str | Literal | Variable | MemberAccess
 
     def as_dict(self) -> dict[str, object]:
-        assert isinstance(self.file, Literal | Variable)
+        assert isinstance(self.file, Literal | Variable | MemberAccess)
         return { 
             "helper-file": self.file.as_dict() 
         }
