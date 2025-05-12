@@ -1,55 +1,22 @@
 # XBT (X Build Tool)
-
-# XBT Lang
-## Motivation
-I wanted a build tool that followed an incremental compile approach similar to Make, 
-but with different features and in a language that is more intuitive to me. So 
-instead of looking around, I figured I'd try to make my own.
-
-Suppose you were writing a program that takes in `some-file.txt` as a command line
-argument like `./a.out some-file.txt` and that everytime `some-file.txt` got updated,
-you could run `make` and it would compile some set of shell commands. The file
-would looks something like this right?
-> In the next section, the same example is done with xbt.
-```make
-# If some-file.txt changes,
-# then execute the following commands.
-all: a.out some-file.txt
-    ./a.out $^
-    
-# If main.c, or helper.o or change, 
-# then execute the following commands.
-a.out: main.c helper.o
-    gcc -o $@ $^
-    $@ some-file.txt
-
-# If helper.c, helper.o, or helper.h change,
-# then execute the following commands.
-helper.o: helper.c helper.o helper.h
-    gcc -o $@ -c $^
-```
-
-## At A Glance
+## XBT Lang At A Glance
 The program is a set of rules (`rule`) where each rule contains a set of input files 
 (`build_files`), a set of output files (`output_files`), and a set of shell commands
 to execute. The program loops through the set of rules in the opposite order in which
 they were declared. For each rule, if any of the input files are newer than the output 
 files, then that rule's set of shell commands will be
 executed. 
-
+> In short, if a rule's input files are newer than its output files,
+> then the rule will execute it's shell commands.
 
 In order for a rule to be conditionally executable, you must declare two of the following:
-1. build_files
-2. output_files
-3. watch_files
-
-If build_files OR watch_files are newer than output_files, then execute
-rule. Otherwise the shell commands in the rule are not executed.
+1. `build_files` : Aliased to `$^`
+2. `output_files`: Aliased to `$@`
+3. `helper_files`: Aliased to `'!' (STRING | MEMBER)`. Can only be used when declaring 
+   `build_files` as of right now.
 
 However, if you want to have a rule run everytime, then don't declare `build_files` 
 and/or `output_files`.
-
-
 
 > For a more in depth look into the language, see 
 > [XBT Lang Introduction](./docs/xbt_lang/language_intro.md)
@@ -82,25 +49,32 @@ rule Main {
     $ echo $exit_message
 }
 
+/* If "helper.h" is changed, it should
+    * trigger the shell commands. They
+    * just aren't used in the shell commands
+    */
 rule Helper {
-    build_files : "${PREFIX}/helper.c" .
-    /* If "helper.h" is changed, it should
-     * trigger the shell commands. They
-     * just aren't used in the shell commands
+    /* The '!' indicates a helper file. If
+     * the helper file is updated, the rule
+     * will run, but it won't be included
+     * when referencing $^ or $build_files.
      */
-    watch_files : "${PREFIX}/helper.h" .
+    build_files : "${PREFIX}/helper.c" 
+                  !"${PREFIX}/helper.h .
     output_files: "${PREFIX}/helper.o" .
 
     $ gcc -o $output_files -c $build_files
+
+    OUTPUT
+    gcc -o ..helper.o -c ..helper.c
 }
 
 /* This would be the first thing executed if
  * "hello.txt" is updated.
  */
 rule Email {
-    watch_files: "hello.txt" .
-
-    $ python email_self.py $watch_files .
+    $^: "hello.txt" .
+    $ python email_self.py $^
 }
 ```
 
@@ -116,4 +90,8 @@ machine if you would like to build Xbt from source.
 To build this project, simply run `make`. This will compile
 the lexer (Antlr) and create a binary stored in `dist/xbt`.
 
-Currently, `xbt` requires the path a build file. If you would like an example build file to test, you can look for `build.xbt` in the [examples directory](./examples) or rebuild Xbt itself using the `build.xbt` file in the project's root directory (AKA where this REAME is located).
+Currently, `xbt` requires the path a build file. If you would like 
+an example build file to test, you can look for `build.xbt` in the 
+[examples directory](./examples) or rebuild Xbt itself using the 
+`build.xbt` file in the project's root directory (AKA where this 
+README is located).
