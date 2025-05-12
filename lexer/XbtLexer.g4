@@ -3,6 +3,8 @@
 
 lexer grammar XbtLexer;
 
+tokens {BUILD_FILES, OUTPUT_FILES}
+
 RULE : 'rule';
 
 STRING : '"' .*? '"' ;
@@ -16,20 +18,24 @@ SEMI   : ';';
 COMMA  : ',';
 COLON  : ':';
 DCOLON : '::' ;
+BANG   : '!'   ;
+
 
 // Keywords
-BUILD_FILES : 'build_files' ;
-OUT_FILES   : 'output_files';
-WATCH_FILES : 'watch_files' ;
+BUILD_FILES  : 'build_files'  -> type(BUILD_FILES);
+OUT_FILES    : 'output_files' -> type(OUTPUT_FILES);
+HELPER_FILES : 'helper_files' ;
+DOLLAR_AT    : '$@' -> type(OUTPUT_FILES);
+DOLLAR_CARROT: '$^' -> type(BUILD_FILES);
 
 DOT    : '.';
-BANG_CARROT: '$^';
 
 ML_COMMENT : '/*' .*? '*/' ;
 SHELL      : '$' WS+ .+? '\n' ;
 VARIABLE   : '$'[a-zA-Z_\-]+ [a-zA-Z_\-]*;
 IDENT   : [a-zA-Z_\-]+ [/a-zA-Z_\-]*;
 PATH       : [a-zA-Z_\-/.]+ [/a-zA-Z_\-!?.]*;
+
 
 WS         : [ \t\r] -> skip ;
 NEW_LINE   : '\n' -> skip;
