@@ -8,7 +8,6 @@ $PREFIX = "." .
 rule Main {
     /* Designated Members */
     build_files : "${PREFIX}/main.c" Helper::$output_files .
-
     output_files: "${PREFIX}/a.out"      .
 
     /* User Defined Members */
@@ -21,13 +20,12 @@ rule Main {
 }
 
 rule Helper {
-    build_files : "${PREFIX}/helper.c" .
-    /* If "helper.h" is changed, it should
-     * trigger the shell commands. They
-     * just aren't used in the shell commands
-     */
-    watch_files : "${PREFIX}/helper.h" .
+    /* Don't inlcude the helper.h when
+     * referencing build_files 
+     */ 
+    build_files : "${PREFIX}/helper.c" 
+                  !"${PREFIX}/helper.h".
     output_files: "${PREFIX}/helper.o" .
 
-    $ gcc -o $output_files -c $build_files
+    $ gcc -o $@ -c $^
 }
