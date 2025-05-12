@@ -9,13 +9,12 @@ Expr    := MemberDeclaration
         | ShellCommand ;
 
 MemberDeclaration := '$'IDENT '=' ( STRING | MEMBER ) '.'
-                  | DESIGNATED_MEMBER ':' ( STRING | MEMBER ) '.' ;
+                  | DESIGNATED_MEMBER ':' '!'? ( STRING | MEMBER ) '.' ;
 
 ShellCommand := '$ ' (STRING | MEMBER )+ '\n';
 
 DESIGNATED_MEMBER := 'build_files'
-                  | 'output_files'
-                  | 'watch_files' ;
+                  | 'output_files' ;
 ```
 
 **Rules**
@@ -34,33 +33,43 @@ $user_defined_member_1 = "string"        .
 $user_defined_member_2 = $other_variable .
 
 build_files : "main.c" .
-watch_files : "main.h" .
 output_files: "a.out"  .
 ```
 
-**Shell Commands**
+**`$`: Shell Commands**
 ```
 $ gcc -o $output_files -c $build_files
 ```
-### String Interpolation
+
+**`!`: Helper Files**  
+As of 0.2.0, the `!` operator is only valid
+when declaring `build_files` (a.k.a `$^`).
+```
+build_files: "other.c" !"other.h" .
+```
+
+**String Interpolation**
 ```bash
 $HOME = "/home/name" ;
 $DOCS="${HOME}/documents";
 ```
-### Assigning a Set of values
+**Assigning a Set of values**
 ```bash
-$build_files = "a.c" "b.c" "e.c"  "d.c";
-```
-### Variable Referencing Within Shell
-```bash
-$build_files = "one.c"  "two.c";
-... code
-gcc $build_files ;
+build_files: "a.c" "b.c" "e.c"  "d.c";
 ```
 
-## Forward Referencing Rule Members
-The user can forward reference Rules and their members. This makes declaring 'build_files' a little easier since they can reference a variable instead of retyping every file path . In the example
-below, the Entry rule declares it's 'build_files' to be:
+**Variable Referencing Within Shell**
+```bash
+build_files: "one.c"  "two.c";
+... code
+$ gcc $build_files ;
+```
+
+**Forward Referencing Rule Members**  
+The user can forward reference Rules and their members. This makes declaring 
+'build_files' a little easier since they can reference a variable instead of 
+retyping every file path . In the example below, the Entry rule declares it's 
+'build_files' to be:
 1) ..."main.c"
 2) `Helper::$output_files`
 
@@ -79,7 +88,8 @@ rule Entry {
 }
 
 /* This rule would always run as it doesn't 
- * declare 'build_files'. 
+ * declare 'build_files'. It's also a useless
+ * rule :)
  */
 rule Helper {
     output_files : "helper.o" .
