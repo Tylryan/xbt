@@ -14,8 +14,8 @@ rule Xbt {
  * Else, don't execute the shell commands.
  */
 rule Lexer {
-	build_files : "lexer/XbtLexer.g4" .
-	output_files: "lexer/XbtLexer.py" .
+	build_files : "lexer/XbtLexer.g4" !"xbt.py" .
+	output_files: "lexer/XbtLexer.py"          .
 
 	$ antlr4 $build_files -Dlanguage=Python3
 }

@@ -1,0 +1,11 @@
+rule Main {
+    $ echo "Running Main"
+}
+
+rule World {
+    $ echo "World!"
+}
+
+rule Hello {
+    $ echo "Hello"
+}

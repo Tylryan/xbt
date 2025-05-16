@@ -33,7 +33,7 @@ BUILD_FILES  =  "build_files"
 OUTPUT_FILES =  "output_files"
 WATCH_FILES  =  "watch_files"
 
-def main(path: str):
+def main(path: str, entry_rule: str | None):
     global global_env
     global rules_ran
 
@@ -65,6 +65,38 @@ def main(path: str):
 
     for global_expr in global_exprs:
         evaluate(global_expr)
+
+    # If a user passes in a rule by name via the command
+    # line.
+    def keep_starting_at(rule_name: str) -> list[Expr]:
+        to_eval: list[Expr] = []
+        keep: bool = False
+        # Remove rules
+        for expr in rest:
+            # If it's not even a rule, then append it
+            if isinstance(expr, Rule) is False:
+                to_eval.append(expr)
+                continue
+            # If it is a rule, check to see if it's
+            # the rule we're looking for.
+            crule_name: str = expr.name.token.text
+
+            # If it is...
+            if rule_name == crule_name:
+                # Then start keeping subsequent rules.
+                keep = True
+
+            if keep:
+                to_eval.append(expr)
+
+        if keep == False:
+            err_msg = f"Unknown rule passed from command line: '{rule_name}'"
+            error(0,0, err_msg)
+
+        return to_eval
+
+    if entry_rule:
+        rest = keep_starting_at(entry_rule)
 
     for expr in rest[::-1]:
         evaluate(expr, {})
@@ -445,10 +477,23 @@ def error(line: int, col: int, message: str) -> None:
 
 if __name__ == "__main__":
     import sys
-    # If no args, use `build.xbt`
-    if len(sys.argv) == 2:
-        path = sys.argv[1]
-    else:
-        path = "build.xbt"
+    # 1. xbt -f file-path.xbt
+    # 2. xbt -r RuleName
 
-    main(path)
+    if len(sys.argv) == 1:
+        main("build.xbt", None)
+        exit(0)
+
+    # Assuming the user passes args
+    # correctly.
+    elif sys.argv[1] == "-f":
+        main(sys.argv[2], None)
+        exit(0)
+
+    elif sys.argv[1] == "-r":
+        main("build.xbt", sys.argv[2])
+        exit(0)
+
+    print("Invalid commands")
+
+    exit(1)
