@@ -6,6 +6,7 @@ from lexer.XbtLexer import XbtLexer
 from parser.xbt_parser import parse
 from xbt_utils import read_file, interpolate
 from parser.exprs import *
+from xbt_globals import *
 
 from pprint import pprint
 import sys
@@ -389,7 +390,9 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
         if isinstance(thing, Rule):
             rule: Rule = thing
             without_dollar: str = p_member[1:]
-            return resolve_variable(without_dollar, 
+            new_var = p_member if is_keyword(p_member) \
+                else without_dollar
+            return resolve_variable(new_var, 
                                     rule.environment)
 
 

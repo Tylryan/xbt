@@ -5,8 +5,7 @@ rule Xbt {
 
 	exit_msg    : "Done!" .
 
-	$ pyinstaller $build_files -F
-	$ echo $exit_msg
+	$ pyinstaller $^ -F
 }
 
 /* If "lexer/XbtLexer.g4" is newer than "XbtLexer.py" OR 
