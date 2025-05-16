@@ -49,8 +49,13 @@ def parse_globals() -> Expr:
     return assignment
 
 def parse_rule() -> Expr:
-    if matches(parser.lexer.RULE) is False:
+    if matches(parser.lexer.RULE, parser.lexer.COMMAND) is False:
         return parse_expression()
+
+    is_command = False
+    if prev().type == parser.lexer.COMMAND:
+        is_command = True
+
 
     name: Variable = parse_primary()
 
@@ -66,7 +71,7 @@ def parse_rule() -> Expr:
 
     consume(parser.lexer.RBRACE,
             f"missing '}} after rule declaration for '{prev().text}'.")
-    return Rule(name, exprs)
+    return Rule(name, exprs, is_command)
 
 def parse_expression() -> Expr:
     if matches(parser.lexer.SHELL): 
@@ -203,8 +208,8 @@ def parse_assignment() -> Expr:
               f"variable '{var.token.text}'.")
 
 
-    while check(parser.lexer.STRING) or check(parser.lexer.VARIABLE):
-        values.append(parse_expression())
+    while check(parser.lexer.STRING) or check(parser.lexer.VARIABLE) or check(parser.lexer.OUT_FILES):
+        values.append(parse_primary())
 
     consume(parser.lexer.DOT,
             "Missing '.' in variable assignment.")
@@ -217,6 +222,8 @@ def parse_primary() -> Expr:
         token.text = token.text[1:]
         return Variable(token)
     if matches(parser.lexer.IDENT):
+        return Variable(prev())
+    if matches(parser.lexer.BUILD_FILES, parser.lexer.OUT_FILES):
         return Variable(prev())
     if matches(parser.lexer.ML_COMMENT):
         return Comment(prev())

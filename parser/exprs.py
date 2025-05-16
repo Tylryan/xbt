@@ -27,11 +27,16 @@ class Rule(Expr):
     name: Variable
     exprs: list[Expr]
     environment: dict[str, object]
+    is_command: bool
 
-    def __init__(self, name: Variable, exprs: list[Expr]):
-        self.name = name
-        self.exprs = exprs
+    def __init__(self, 
+                 name: Variable, 
+                 exprs: list[Expr],
+                 is_command: bool):
+        self.name        = name
+        self.exprs       = exprs
         self.environment = {}
+        self.is_command  = is_command
 
     def as_dict(self) -> dict[str, object]:
         exprs: list[Expr] = []

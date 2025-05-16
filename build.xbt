@@ -1,11 +1,24 @@
+
+cmd run {
+	$ echo "RUNNING!"
+}
+cmd clean {
+	$ rm Xbt::$clean
+}
+cmd compile {
+	$ python xbt.py -r Xbt
+}
+
 rule Xbt {
 	$^ : "xbt.py" "parser/xbt_parser.py"  
 				  !Lexer::$output_files   .
 	$@: "dist/xbt"                        .
 
-	exit_msg    : "Done!" .
+	clean    : $@ .
+	exit_msg : "Done!" .
 
 	$ pyinstaller $^ -F
+	$ echo Lexer::$@
 }
 
 /* If "lexer/XbtLexer.g4" is newer than "XbtLexer.py" OR 
@@ -14,7 +27,9 @@ rule Xbt {
  */
 rule Lexer {
 	build_files : "lexer/XbtLexer.g4" !"xbt.py" .
-	output_files: "lexer/XbtLexer.py"          .
+	output_files: "lexer/XbtLexer.py"           .
+
+	clean : $@ .
 
 	$ antlr4 $build_files -Dlanguage=Python3
 }

@@ -4,7 +4,7 @@ from antlr4 import *
 
 from lexer.XbtLexer import XbtLexer
 from parser.xbt_parser import parse
-from xbt_utils import read_file, interpolate
+from xbt_utils import read_file, interpolate, flat_join
 from parser.exprs import *
 from xbt_globals import *
 
@@ -24,6 +24,8 @@ global global_env
 global_env = {}
 global rules_ran
 rules_ran = 0
+global dry_run
+dry_run = False
 
 def notify(message: str) -> None:
     print(message)
@@ -34,7 +36,10 @@ BUILD_FILES  =  "build_files"
 OUTPUT_FILES =  "output_files"
 WATCH_FILES  =  "watch_files"
 
-def main(path: str, entry_rule: str | None):
+def main(args: Args):
+    path       = args.build_file
+    entry_rule = args.entry_rule
+
     global global_env
     global rules_ran
 
@@ -66,6 +71,37 @@ def main(path: str, entry_rule: str | None):
 
     for global_expr in global_exprs:
         evaluate(global_expr)
+
+    # TODO(tyler): extract commands
+    def cmd_decs(exprs: list[Expr]) -> tuple[list[Rule], list[Expr]]:
+        commands: list[Rule] = []
+        all_other: list[Expr] = []
+        for expr in exprs:
+            if isinstance(expr, Rule):
+                if expr.is_command:
+                    commands.append(expr)
+                    continue
+            all_other.append(expr)
+                
+        return (commands, all_other)
+
+    commands, rest = cmd_decs(rest)
+
+    def run_cmd(cmd_name: str, commands: list[Rule]) -> bool:
+        global global_env
+        for command in commands:
+            command_name = command.name.token.text
+            if command_name == cmd_name:
+                evaluate(command, global_env)
+                return True
+        return False
+
+    # TODO(tyler): If command passed in command line in
+    # commands, then execute command and skip below.
+    # Eventually, the user will be able to pass multiple
+    # commands. Do this for each.
+
+    [print(x) for x in commands]
 
     # If a user passes in a rule by name via the command
     # line.
@@ -99,9 +135,21 @@ def main(path: str, entry_rule: str | None):
     if entry_rule:
         rest = keep_starting_at(entry_rule)
 
-    for expr in rest[::-1]:
-        evaluate(expr, {})
-        
+
+    if len(args.commands) > 0:
+        global dry_run
+        dry_run = True
+        for expr in rest[::-1]:
+            evaluate(expr, {})
+        dry_run = False
+
+        for cmd in args.commands:
+            if run_cmd(cmd, commands) is False:
+                error(0, 0, f"Unknown command passed in the command line: '{cmd}'")
+    else:
+        for expr in rest[::-1]:
+            evaluate(expr, {})
+
     if not rules_ran:
         print("No rules ran. Nothing to do.")
 
@@ -204,6 +252,7 @@ def eval_rule(rule: Rule) ->  None:
     # Nested rules are not allowed as of, so 
     global global_env
     global rules_ran
+    global dry_run
     # If rule name already exists, throw an error.
     rule_name = rule.name.token.text
     l: int = rule.name.token.line
@@ -240,10 +289,14 @@ def eval_rule(rule: Rule) ->  None:
             rule.environment[key] = values if values else None
 
 
+
+
+
     # Immediately pull out the values for the keywords 
     # "build_files" and "output_files".
     build_files: list[str | HelperFile] | None = rule.environment.get(BUILD_FILES, [])
     output_files: list[str]| None = rule.environment.get(OUTPUT_FILES, [])
+
     shell_commands: list[Shell] = []
     for expr in rule.exprs:
         if isinstance(expr, Shell):
@@ -261,6 +314,10 @@ def eval_rule(rule: Rule) ->  None:
     import os
     from os.path import getctime
 
+    # If dry run, then don't evaluate
+    if dry_run:
+        return (False, "idk")
+
     # If the user did not assign a value to one of these 
     # keyword variables then the rule should not do a time 
     # comparison and should simply run the shell scripts
@@ -269,7 +326,10 @@ def eval_rule(rule: Rule) ->  None:
         # NOTE: This is the point in the program where Shell/BuildFiles/etc
         # are evaluated.
         # TODO(tyler): This should ony evaluate Shell Commands right?
-        [ evaluate(expr, rule.environment) for expr  in shell_commands]
+        if rule.is_command:
+            [ evaluate(expr, global_env) for expr  in shell_commands]
+        else:
+            [ evaluate(expr, rule.environment) for expr  in shell_commands]
         # eval_list(rule.exprs, rule.environment)
         rules_ran+=1
         return (True, rule_name)
@@ -405,7 +465,9 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
                     no_helpers.append(file_path)
             if no_helpers == []:
                 return ""
-            return interpolate(' '.join(no_helpers),
+            
+            res = flat_join(" ", no_helpers)
+            return interpolate(res,
                                global_env,
                                local_env)
         return None
@@ -443,6 +505,9 @@ def eval_comment(comment: Comment) -> None:
 
 def eval_variable(variable: Variable, local_env: dict[str, object]) -> object:
     variable_name = variable.token.text
+
+    if is_alias(variable.token.text):
+        variable_name = get_alias(variable_name)
 
     if variable_name in local_env.keys():
         return local_env[variable_name]
@@ -483,20 +548,30 @@ if __name__ == "__main__":
     # 1. xbt -f file-path.xbt
     # 2. xbt -r RuleName
 
+    class Args:
+        build_file: str
+        entry_rule: str
+        commands: list[str]
+
+        def __init__(self):
+            self.build_file = None
+            self.entry_rule = None
+            self.commands = []
+
+    args = Args()
     if len(sys.argv) == 1:
-        main("build.xbt", None)
-        exit(0)
+        args.build_file = "build.xbt"
 
     # Assuming the user passes args
     # correctly.
     elif sys.argv[1] == "-f":
-        main(sys.argv[2], None)
-        exit(0)
+        args.build_file = sys.argv[2]
 
     elif sys.argv[1] == "-r":
-        main("build.xbt", sys.argv[2])
-        exit(0)
+        args.build_file = "build.xbt"
+        args.entry_rule = sys.argv[2]
+    else:
+        args.build_file = "build.xbt"
+        args.commands = sys.argv[1:]
 
-    print("Invalid commands")
-
-    exit(1)
+    main(args)

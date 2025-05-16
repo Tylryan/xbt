@@ -63,3 +63,16 @@ def interpolate(string: str | HelperFile,
         for v in new_vals:
             string_copy = string_copy.replace(key, v)
     return string_copy
+
+
+def flat_join(delim: str, xs) -> str:
+    new_string: str = ""
+
+    for i, x in enumerate(xs):
+        if isinstance(x, str) and i == 0:
+            new_string+= f"{x}{delim}"
+        elif isinstance(x, list):
+            new_string += flat_join(delim, x)
+        else:
+            new_string += f"{delim}{x}"
+    return new_string

@@ -5,7 +5,8 @@ lexer grammar XbtLexer;
 
 tokens {BUILD_FILES, OUT_FILES}
 
-RULE : 'rule';
+RULE     : 'rule';
+COMMAND  : 'cmd' ;
 
 STRING : '"' .*? '"' ;
 

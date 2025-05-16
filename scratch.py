@@ -1,11 +1,15 @@
-import re
-from xbt_utils import interpolate
+
+def flat_join(delim: str, xs) -> str:
+    new_string: str = ""
+
+    for i, x in enumerate(xs):
+        if i == 0:
+            new_string+= f"{x}{delim}"
+        elif isinstance(x, list):
+            new_string += flat_join(delim, x)
+        else:
+            new_string += f"{delim}{x}"
+    return new_string
 
 
-env = {
-    "project_dir": "examples/c_projects",
-}
-
-
-print(interpolate(r"${project_dir}/main.c", env))
-
+print(flat_join(" ", ["file1.txt", ["dist/xbt"]]))
