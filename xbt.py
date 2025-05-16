@@ -6,8 +6,8 @@ from lexer.XbtLexer import XbtLexer
 from parser.xbt_parser import parse
 from xbt_utils import read_file, interpolate
 from parser.exprs import *
-from pprint import pprint
 
+from pprint import pprint
 import sys
 from sys import stdout
 
@@ -425,6 +425,7 @@ def eval_assign(assign: Assign, local_env: dict[str, object]) -> None:
 
     variable: Token = assign.variable.token
     values: list[object] = eval_list(assign.values, local_env)
+
     if assign.is_global:
         global_env[variable.text] = values
     else:

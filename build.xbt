@@ -1,8 +1,12 @@
 rule Xbt {
-	build_files : "xbt.py"   !Lexer::$output_files  .
-	output_files: "dist/xbt"                        .
+	$^ : "xbt.py" "parser/xbt_parser.py"  
+				  !Lexer::$output_files   .
+	$@: "dist/xbt"                        .
+
+	exit_msg    : "Done!" .
 
 	$ pyinstaller $build_files -F
+	$ echo $exit_msg
 }
 
 /* If "lexer/XbtLexer.g4" is newer than "XbtLexer.py" OR 

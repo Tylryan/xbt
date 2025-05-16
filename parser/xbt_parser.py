@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from antlr4 import Token
 from lexer.XbtLexer import XbtLexer
 from parser.exprs import *
@@ -187,7 +186,7 @@ def parse_assignment() -> Expr:
     expr: Expr = parse_primary()
 
     # TODO: I think I want to change this to a COLON
-    if matches(parser.lexer.EQUAL) is False:
+    if matches(parser.lexer.COLON) is False:
         return expr
 
     if isinstance(expr, Variable) is False:
@@ -227,7 +226,7 @@ def parse_primary() -> Expr:
     #     advance()
     else:
         error(peek().line, peek().column, 
-              f"Unimplementd type: {peek().text}, type: {peek().type}")
+              f"Unimplemented type: {peek().text}, type: {peek().type}")
 
 
 

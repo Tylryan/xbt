@@ -19,6 +19,7 @@ XBT=xbt.py
 # 	as expected.
 dist/xbt: xbt.py lexer/XbtLexer.py
 	pyinstaller xbt.py -F
+	cp dist/xbt ~/.local/bin
 
 # output_file: input_file
 lexer/XbtLexer.py: lexer/XbtLexer.g4
@@ -29,6 +30,7 @@ lexer/XbtLexer.py: lexer/XbtLexer.g4
 # Command line arguments
 clean:
 	rm -rf dist*
+	rm ~/.local/bin/xbt
 	make -C lexer/ clean
 
 run:
