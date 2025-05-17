@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "xbt.py",
             "console": "integratedTerminal",
-            "args": ["clean"]
+            "args": []
         }
     ]
 }

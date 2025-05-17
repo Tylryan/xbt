@@ -240,7 +240,12 @@ def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> list
     # NOTE(tyler): Expects the '$' at the front,
     # but this is not how variables are stored.
     # The are stored without this sign.
-    member_name: str = expr.member.text[1:]
+    member_name: str = expr.member.text
+    if is_alias(member_name):
+        member_name = get_alias(member_name)
+
+    elif is_keyword(member_name) is False:
+        member_name: str = expr.member.text[1:]
     if member_name in local_env.keys():
         return local_env[member_name]
 

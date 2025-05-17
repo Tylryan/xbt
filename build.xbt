@@ -11,7 +11,7 @@ cmd compile {
 
 rule Xbt {
 	$^ : "xbt.py" "parser/xbt_parser.py"  
-				  !Lexer::$output_files   .
+				  !Lexer::$@              .
 	$@: "dist/xbt"                        .
 
 	clean    : $@ .

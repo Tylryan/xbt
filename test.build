@@ -1,5 +1,0 @@
-rule Main {
-    build_files: "hello.c" !"hello.h" .
-
-    $ echo $^
-}

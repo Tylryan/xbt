@@ -99,7 +99,18 @@ def parse_member_access() -> Expr:
     consume(parser.lexer.DCOLON, err_msg)
 
     err_msg = "Missing member in member access expression."
-    member: Token = consume(parser.lexer.VARIABLE, err_msg)
+    valid_tokens = [
+        check(parser.lexer.VARIABLE),
+        check(parser.lexer.OUT_FILES),
+        check(parser.lexer.BUILD_FILES)
+    ]
+    if any(valid_tokens) is False:
+        l: int = peek().line
+        c: int = peek().column
+        error(l, c, err_msg)
+
+    # member: Token = consume(parser.lexer.VARIABLE, err_msg)
+    member: Token = advance()
     return MemberAccess(rule_name, member)
 
 def parse_build_files() -> Expr:
