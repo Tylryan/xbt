@@ -3,6 +3,7 @@ from __future__ import annotations
 from antlr4 import *
 from lexer.XbtLexer import XbtLexer
 
+from cli.xbt_cli import cli, Args
 from parser.exprs import Expr
 from parser.xbt_parser import parse
 from xbt_utils import read_file
@@ -25,22 +26,7 @@ def main(args: Args):
 
 
 if __name__ == "__main__":
-    import sys
     from cli.xbt_cli import Args
 
-    args = Args()
-    if len(sys.argv) == 1:
-        args.build_file = "build.xbt"
-
-    # NOTE(tyler): Assuming the user passes args correctly.
-    elif sys.argv[1] == "-f":
-        args.build_file = sys.argv[2]
-
-    elif sys.argv[1] == "-r":
-        args.build_file = "build.xbt"
-        args.entry_rule = sys.argv[2]
-    else:
-        args.build_file = "build.xbt"
-        args.commands = sys.argv[1:]
-
+    args: Args = cli()
     main(args)
