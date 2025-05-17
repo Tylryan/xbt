@@ -76,3 +76,11 @@ def flat_join(delim: str, xs) -> str:
         else:
             new_string += f"{delim}{x}"
     return new_string
+
+def trim_quote(string: str) -> str:
+    assert isinstance(string, str)
+    return string[1:-1]
+# TODO(tyler): Put this somewhere else
+def trim_quotes(strings: list[str]) -> list[str]:
+    assert isinstance(strings, list)
+    return [trim_quote(s) for s in strings]

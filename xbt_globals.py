@@ -1,3 +1,7 @@
+BUILD_FILES  =  "build_files"
+OUTPUT_FILES =  "output_files"
+WATCH_FILES  =  "watch_files"
+
 XBT_KEYWORDS = [
     "build_files",
     "output_files",
