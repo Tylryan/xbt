@@ -9,23 +9,19 @@ from xbt_utils import read_file
 from interpreter.xbt_interpreter import interpret
 
 
-
-
 def main(args: Args):
-    path       = args.build_file
-    entry_rule = args.entry_rule
-
     global global_env
     global rules_ran
 
     # TODO(tyler): Make command line more robust.
     # currently real easy to crash.
 
-    # source: str = read_file(sys.argv[1])
-    source: str = read_file(path)
-    lexer: XbtLexer = XbtLexer(InputStream(source))
-    exprs: list[Expr] = parse(lexer)
+    source: str        = read_file(args.build_file)
+    lexer : XbtLexer   = XbtLexer(InputStream(source))
+    exprs : list[Expr] = parse(lexer)
     interpret(args, exprs)
+
+    return 0
 
 
 if __name__ == "__main__":

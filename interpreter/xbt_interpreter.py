@@ -1,24 +1,22 @@
 from __future__ import annotations
 
-from xbt_globals import *
-from xbt_utils import *
-from cli.xbt_cli import Args
-
 from antlr4 import *
-from xbt_utils import read_file, interpolate, flat_join, trim_quote, trim_quotes
-from parser.exprs import *
-from xbt_globals import *
 
-from pprint import pprint
 import sys
 from sys import stdout
 
+from cli.xbt_cli import Args
+from parser.exprs import *
+from xbt_globals import *
+from xbt_utils import interpolate, flat_join, trim_quote
+
 global global_env
-global_env = {}
 global rules_ran
-rules_ran = 0
 global dry_run
-dry_run = False
+
+global_env = {}
+rules_ran  = 0
+dry_run    = False
 
 def interpret(args: Args, exprs: list[Expr]) -> None:
     from pprint import pprint
@@ -29,7 +27,6 @@ def interpret(args: Args, exprs: list[Expr]) -> None:
     for global_expr in global_exprs:
         evaluate(global_expr)
 
-
     commands, rest = cmd_decs(rest)
 
     # TODO(tyler): If command passed in command line in
@@ -37,12 +34,8 @@ def interpret(args: Args, exprs: list[Expr]) -> None:
     # Eventually, the user will be able to pass multiple
     # commands. Do this for each.
 
-    [print(x) for x in commands]
-
-
     if args.entry_rule:
         rest = keep_starting_at(args.entry_rule)
-
 
     if len(args.commands) > 0:
         global dry_run
@@ -61,99 +54,30 @@ def interpret(args: Args, exprs: list[Expr]) -> None:
     if not rules_ran:
         print("No rules ran. Nothing to do.")
 
+
 def evaluate(expr: Expr, local_env: dict[str, object] = {}) -> object:
     if expr is None:
         return None
 
-    if isinstance(expr, Rule)    : return eval_rule(expr)
-    if isinstance(expr, Shell)   : return eval_shell(expr, local_env)
+    if isinstance(expr, Rule)        : return eval_rule(expr)
+    if isinstance(expr, Shell)       : return eval_shell(expr, local_env)
     if isinstance(expr, MemberAccess): return eval_member_access(expr, local_env)
-    if isinstance(expr,Comment)  : return eval_comment(expr)
-    if isinstance(expr, Assign)  : return eval_assign(expr, local_env)
-    if isinstance(expr, Literal) : return eval_literal(expr)
-    if isinstance(expr, Variable): return eval_variable(expr, local_env)
-    if isinstance(expr, BuildFiles): return eval_file_dec(expr, local_env)
-    if isinstance(expr, OutFiles)  : return eval_file_dec(expr, local_env)
-    if isinstance(expr, HelperFile): return eval_helper_file(expr, local_env)
-    if isinstance(expr, HelperFiles): return eval_file_dec(expr, local_env)
+    if isinstance(expr,Comment)      : return eval_comment(expr)
+    if isinstance(expr, Assign)      : return eval_assign(expr, local_env)
+    if isinstance(expr, Literal)     : return eval_literal(expr)
+    if isinstance(expr, Variable)    : return eval_variable(expr, local_env)
+    if isinstance(expr, BuildFiles)  : return eval_file_dec(expr, local_env)
+    if isinstance(expr, OutFiles)    : return eval_file_dec(expr, local_env)
+    if isinstance(expr, HelperFile)  : return eval_helper_file(expr, local_env)
+    if isinstance(expr, HelperFiles) : return eval_file_dec(expr, local_env)
     else: error(f"[interpreter-error] unimplemented expression: {expr}")
+
 
 def eval_list(exprs: list[Expr], local_env: dict[str, object]) -> list[object]:
     values: list[object] = []
     for expr in exprs:
         values.append(evaluate(expr, local_env))
     return values
-
-def eval_helper_file(expr: HelperFile, 
-                      local_env: dict[str, object], 
-                      keep=False) -> list[str]:
-    err_msg = f"Unimplemented type in HelperFile: {expr.file}."
-    assert isinstance(expr.file,  Literal | Variable | MemberAccess), err_msg
-
-    # Only the shell would not want to keep the original
-    # HelperFile.
-    if not keep:
-        return expr
-
-    if isinstance(expr.file, Literal):
-        return [HelperFile(eval_literal(expr.file))]
-    if isinstance(expr.file, Variable):
-        return [HelperFile(eval_variable(expr.file, local_env))]
-    if isinstance(expr.file, MemberAccess):
-        evaled_files = eval_member_access(expr.file, local_env)
-        return [HelperFile(f) for f in evaled_files]
-
-def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> list[str]:
-    assert isinstance(expr, MemberAccess)
-    global  global_env
-    # NOTE(tyler): Expects the '$' at the front,
-    # but this is not how variables are stored.
-    # The are stored without this sign.
-    member_name: str = expr.member.text[1:]
-    if member_name in local_env.keys():
-        return local_env[member_name]
-
-    rule_name: Token =expr.rule_name
-    err_msg = f"Undefined Rule: {rule_name.text}"
-    if rule_name.text not in global_env.keys():
-        error(rule_name.line, rule_name.column,
-              err_msg)
-
-    rule: Rule = global_env[expr.rule_name.text]
-    if member_name not in rule.environment.keys():
-        err_msg = f"Undefined Member: {expr.member.text}."
-        error(expr.member.line, expr.member.column,
-              err_msg)
-
-    # Note, this returns uninterpolated strings
-    res: list[str] = rule.environment[member_name]
-    return res
-
-
-def eval_file_dec(expr: BuildFiles | OutFiles, 
-                  local_env: dict[str, object]) ->  list[str | HelperFile]:
-    # assert isinstance(expr, BuildFiles | OutFiles  | HelperFiles)
-
-    files: list[str] = []
-    for file in expr.files:
-        if isinstance(file, Literal):
-            res: str = eval_literal(file)
-            files.append(res)
-        elif isinstance(file, MemberAccess):
-            res: list[str] = eval_member_access(file, local_env)
-            files = files + res
-        elif isinstance(file, Variable):
-            res: list[str] = eval_variable(file, local_env)
-            files = files + res
-        elif isinstance(file, HelperFile):
-            res: list[HelperFile] = eval_helper_file(file, 
-                                                           local_env, True)
-            files = files + res
-        else:
-            err_msg = f"Invalid expression in '{expr.token.text}' declaration.'"
-            error(expr.token.line, expr.token.column,
-                  err_msg)
-    return files
 
 
 def eval_rule(rule: Rule) ->  None:
@@ -195,9 +119,6 @@ def eval_rule(rule: Rule) ->  None:
                                                            rule.environment)
             assert values, f"The parser should not allow '{key}' to be none"
             rule.environment[key] = values if values else None
-
-
-
 
 
     # Immediately pull out the values for the keywords 
@@ -294,19 +215,76 @@ def eval_rule(rule: Rule) ->  None:
     return (True, rule_name)
 
 
-def var_lookup(var_name: str, local_env: dict[str, object]) -> str | None:
-    # Check the local environment first
-    if var_name in local_env.keys():
-        return local_env.get(var_name)
+def eval_helper_file(expr: HelperFile, 
+                      local_env: dict[str, object], 
+                      keep=False) -> list[str]:
+    err_msg = f"Unimplemented type in HelperFile: {expr.file}."
+    assert isinstance(expr.file,  Literal | Variable | MemberAccess), err_msg
 
-    # Then check the global. Return None
-    # if no variable was found.
-    return global_env.get(var_name, None)
+    # Only the shell would not want to keep the original
+    # HelperFile.
+    if not keep:
+        return expr
 
-def var_exists(var_name: str, local_env: dict[str,object]) -> Rule | None:
-    global global_env
-    return var_name in local_env.keys() or \
-           var_name in global_env.keys()
+    if isinstance(expr.file, Literal):
+        return [HelperFile(eval_literal(expr.file))]
+    if isinstance(expr.file, Variable):
+        return [HelperFile(eval_variable(expr.file, local_env))]
+    if isinstance(expr.file, MemberAccess):
+        evaled_files = eval_member_access(expr.file, local_env)
+        return [HelperFile(f) for f in evaled_files]
+
+def eval_member_access(expr: MemberAccess, local_env: dict[str, object]) -> list[str]:
+    assert isinstance(expr, MemberAccess)
+    global  global_env
+    # NOTE(tyler): Expects the '$' at the front,
+    # but this is not how variables are stored.
+    # The are stored without this sign.
+    member_name: str = expr.member.text[1:]
+    if member_name in local_env.keys():
+        return local_env[member_name]
+
+    rule_name: Token =expr.rule_name
+    err_msg = f"Undefined Rule: {rule_name.text}"
+    if rule_name.text not in global_env.keys():
+        error(rule_name.line, rule_name.column,
+              err_msg)
+
+    rule: Rule = global_env[expr.rule_name.text]
+    if member_name not in rule.environment.keys():
+        err_msg = f"Undefined Member: {expr.member.text}."
+        error(expr.member.line, expr.member.column,
+              err_msg)
+
+    # Note, this returns uninterpolated strings
+    res: list[str] = rule.environment[member_name]
+    return res
+
+
+def eval_file_dec(expr: BuildFiles | OutFiles, 
+                  local_env: dict[str, object]) ->  list[str | HelperFile]:
+    # assert isinstance(expr, BuildFiles | OutFiles  | HelperFiles)
+
+    files: list[str] = []
+    for file in expr.files:
+        if isinstance(file, Literal):
+            res: str = eval_literal(file)
+            files.append(res)
+        elif isinstance(file, MemberAccess):
+            res: list[str] = eval_member_access(file, local_env)
+            files = files + res
+        elif isinstance(file, Variable):
+            res: list[str] = eval_variable(file, local_env)
+            files = files + res
+        elif isinstance(file, HelperFile):
+            res: list[HelperFile] = eval_helper_file(file, local_env, True)
+            files = files + res
+        else:
+            err_msg = f"Invalid expression in '{expr.token.text}' declaration.'"
+            error(expr.token.line, expr.token.column,
+                  err_msg)
+    return files
+
 
 def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
     global global_env
@@ -379,7 +357,6 @@ def eval_shell(shell: Shell, local_env: dict[str, object]) ->  None:
                                global_env,
                                local_env)
         return None
-
 
 
     resolved_commands: list[str] = []
@@ -516,3 +493,17 @@ def keep_starting_at(rule_name: str) -> list[Expr]:
         error(0,0, err_msg)
 
     return to_eval
+
+def var_lookup(var_name: str, local_env: dict[str, object]) -> str | None:
+    # Check the local environment first
+    if var_name in local_env.keys():
+        return local_env.get(var_name)
+
+    # Then check the global. Return None
+    # if no variable was found.
+    return global_env.get(var_name, None)
+
+def var_exists(var_name: str, local_env: dict[str,object]) -> Rule | None:
+    global global_env
+    return var_name in local_env.keys() or \
+           var_name in global_env.keys()

@@ -33,9 +33,6 @@ def parse(lexer: XbtLexer) -> list:
         if expr:
             exprs.append(expr)
 
-    # from pprint import pprint
-    # [ pprint(x.as_dict(), sort_dicts=False) for x in exprs]
-    # exit(1)
     return exprs
 
 
@@ -237,14 +234,7 @@ def parse_primary() -> Expr:
 
 
 
-
-
-
-
-
-
-
-
+# ----------- HELPERS
 def position() -> tuple[int, int]:
     return (line(), column())
 
