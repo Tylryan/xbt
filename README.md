@@ -20,78 +20,67 @@ and/or `output_files`.
 
 > For a more in depth look into the language, see 
 > [XBT Lang Introduction](./docs/xbt_lang/language_intro.md)
+
+Below is the build script currently being used for XBT itself.
 ```
-/* Declare global variables */
-$PREFIX = "" .
-
-
-/* This rule can be given any name */
-rule Run {
-    watch_files: "${PREFIX}/some-file.txt" .
-
-    $ Main::output_files $watch_files
-}
-
-/* 'Main' will be the last rule to execute */
-rule Main {
-    /* Designated Members */
-    build_files : "${PREFIX}/main.c" 
-                   Helper::$output_files .
-
-    output_files: "${PREFIX}/a.out"      .
-
-    /* User Defined Members */
-    $exit_message = "Done compiling!"    .
-
-    /* Shell Commands */
-    $ gcc -o $@ $^ $#
-    $ gcc -o $output_files $build_files
-    $ echo $exit_message
-}
-
-/* If "helper.h" is changed, it should
-    * trigger the shell commands. They
-    * just aren't used in the shell commands
-    */
-rule Helper {
-    /* The '!' indicates a helper file. If
-     * the helper file is updated, the rule
-     * will run, but it won't be included
-     * when referencing $^ or $build_files.
-     */
-    build_files : "${PREFIX}/helper.c" 
-                  !"${PREFIX}/helper.h .
-    output_files: "${PREFIX}/helper.o" .
-
-    $ gcc -o $output_files -c $build_files
-
-    OUTPUT
-    gcc -o ..helper.o -c ..helper.c
-}
-
-/* This would be the first thing executed if
- * "hello.txt" is updated.
+/* Commands that can be called from the
+ * command line: `xbt clean compile run`
  */
-rule Email {
-    $^: "hello.txt" .
-    $ python email_self.py $^
+cmd run     { $ echo "RUNNING!"      }
+cmd clean   { $ rm Xbt::$clean       }
+cmd compile { $ python xbt.py -r Xbt }
+
+/* The first rule defined is the last to
+ * execute.
+ */
+rule Xbt {
+	/* If the three input files below are
+	 * newer than the output files ($@)
+	 * below, then run this rule. The two
+	 * following members below are called
+	 * "Designated Members".
+	 */
+	$^ : "xbt.py" "parser/xbt_parser.py"  
+				  !Lexer::$@              .
+	$@: "dist/xbt"                        .
+
+	/* User defined members */
+	clean    : $@ .
+	exit_msg : "Done!" .
+
+	/* Shell commands to run if this rule
+	 * triggers.
+	 */
+	$ pyinstaller $^ -F
+	$ echo Lexer::$@
+}
+
+/* If "lexer/XbtLexer.g4" is newer than "XbtLexer.py" OR 
+ * XbtLexer.py doesn't exist, then run the antlr4 command. 
+ * Else, don't execute the shell commands.
+ */
+rule Lexer {
+	build_files : "lexer/XbtLexer.g4"           .
+	output_files: "lexer/XbtLexer.py"           .
+
+	clean : $@ .
+
+	$ antlr4 $build_files -Dlanguage=Python3
 }
 ```
-
 
 ## Build
 Below are the prerequisite programs required to be on your
 machine if you would like to build Xbt from source.
-1. `make`       : > 4.4.1
-2. `antlr4`     : > 4.13.2
-3. `python`     : > 3.12.6
-4. `pyinstaller`: > 6.11.0
+1. `make`       : >= 4.4.1
+2. `antlr4`     : >= 4.13.2
+3. `python`     : >= 3.12.6
+4. `pyinstaller`: >= 6.11.0
 
 To build this project, simply run `make`. This will compile
 the lexer (Antlr) and create a binary stored in `dist/xbt`.
 
-Currently, `xbt` requires the path a build file. If you would like 
-an example build file to test, you can look for `build.xbt` in the 
-[examples directory](./examples) or rebuild Xbt itself using the 
-`build.xbt` file in the project's root directory (AKA where this 
-README is located).
+If you would like an example build file to test, you can look for 
+`build.xbt` in the [examples directory](./examples) or rebuild Xbt 
+itself using the `build.xbt` file in the project's root directory 
+(AKA where this README is located).
